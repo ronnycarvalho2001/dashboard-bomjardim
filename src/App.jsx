@@ -458,7 +458,7 @@ function SetorSelector({ value, onChange }) {
                 onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
                 onMouseLeave={e => e.currentTarget.style.background = isExp(g.nome) ? C.navyLight+"80" : "transparent"}>
                 <span onMouseDown={e => toggle(e, g.nome)}
-                  style={{width:16, fontSize:9, color:C.muted, userSelect:"none", flexShrink:0, textAlign:"center"}}>
+                  style={{width:20, fontSize:14, color:C.muted, userSelect:"none", flexShrink:0, textAlign:"center"}}>
                   {isExp(g.nome) ? "▾" : "▸"}
                 </span>
                 <span onMouseDown={e => { e.stopPropagation(); pick(g.nome); }}
