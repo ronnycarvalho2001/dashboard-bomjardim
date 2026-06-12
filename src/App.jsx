@@ -17,10 +17,227 @@ const SUPERVISORES = [
   { nome:"Marcos Paulo Rabelo", email:"m.rabelo@airbox.pro" },
 ];
 const FABRICANTES = ["INGETEAM","SMA","ABB","Fronius","Huawei","Sungrow","Array","STI","WEG","Railec","Jinko"];
-const SETORES_SDM3 = ["SDM3-1.1","SDM3-1.2","SDM3-2.1","SDM3-2.2","SDM3-3.1","SDM3-3.2","SDM3-4.1","SDM3-4.2","SDM3-5.1","SDM3-5.2","SDM3-6.1","SDM3-6.2","SDM3-7.1","SDM3-7.2"];
-const SETORES_SDM4 = ["SDM4-1.1","SDM4-1.2","SDM4-2.1","SDM4-2.2","SDM4-3.1","SDM4-3.2","SDM4-4.1","SDM4-4.2","SDM4-5.1","SDM4-5.2","SDM4-6.1","SDM4-6.2","SDM4-7.1","SDM4-7.2","SDM4-8.1","SDM4-8.2"];
-const SERIES_MAP  = {
-};
+const GRUPOS = [
+  { nome:"BJA1-STS1", serial:"XB255573", inv:[
+    ["INV1","ES2510069813"],["INV2","ES2510069737"],["INV3","ES2510069754"],["INV4","ES2510069736"],
+    ["INV5","ES2510069798"],["INV6","ES2510069243"],["INV7","ES24C0228699"],["INV8","ES24C0228751"],
+    ["INV9","ES24C0227933"],["INV10","ES2510069419"],["INV11","ES2510069479"],["INV12","ES2510070919"],
+    ["INV13","ES2510047221"],["INV14","ES2510069724"],["INV15","ES24C0228697"],["INV16","ES24C0227989"],
+    ["INV17","ES2510069411"],["INV18","ES2520016714"],["INV19","ES2510069456"],["INV20","ES2520016642"],
+    ["INV21","ES24C0228632"],["INV22","ES2520016641"],["INV23","ES2520016532"],["INV24","ES2510069341"],
+    ["INV25","ES2510070880"],["INV26","ES2510070784"],["INV27","ES2510069463"],["INV28","ES24C0228685"],
+    ["INV29","ES24C0228714"],["INV30","ES24C0228674"],
+  ]},
+  { nome:"BJA1-STS2", serial:"XB255572", inv:[
+    ["INV1","ES24C0228663"],["INV2","ES2510069297"],["INV3","ES24C0227287"],["INV4","ES24C0227258"],
+    ["INV5","ES2520016715"],["INV6","ES2510069247"],["INV7","ES2510070826"],["INV8","ES2510070822"],
+    ["INV9","ES2510070845"],["INV10","ES2510070759"],["INV11","ES2510070907"],["INV12","ES2510047202"],
+    ["INV13","ES24C0227380"],["INV14","ES2510069455"],["INV15","ES2510070816"],["INV16","ES2510070824"],
+    ["INV17","ES2510070916"],["INV18","ES2510069317"],["INV19","ES2510047215"],["INV20","ES2510070800"],
+    ["INV21","ES2510069358"],["INV22","ES2510069391"],["INV23","ES2510069327"],["INV24","ES2510069328"],
+    ["INV25","ES2520016651"],["INV26","ES24C0227919"],["INV27","ES2510069460"],["INV28","ES2510069360"],
+    ["INV29","ES2510069432"],["INV30","ES2510069342"],
+  ]},
+  { nome:"BJA1-STS3", serial:"XB255569", inv:[
+    ["INV1","ES2510069823"],["INV2","ES2510069797"],["INV3","ES2510069852"],["INV4","ES2510047322"],
+    ["INV5","ES24C0228059"],["INV6","ES2520016688"],["INV7","ES2520016648"],["INV8","ES2510069778"],
+    ["INV9","ES2520016635"],["INV10","ES24C0231085"],["INV11","ES2510069801"],["INV12","ES2510069786"],
+    ["INV13","ES2510047337"],["INV14","ES2510069759"],["INV15","ES2520016659"],["INV16","ES2510047312"],
+    ["INV17","ES2520016536"],["INV18","ES2520016643"],["INV19","ES2520016631"],["INV20","ES2510069470"],
+    ["INV21","ES2510069843"],["INV22","ES2510069850"],["INV23","ES2510047309"],["INV24","ES2510069387"],
+    ["INV25","ES2510069415"],["INV26","ES2520016611"],["INV27","ES2520016612"],["INV28","ES2510069799"],
+    ["INV29","ES2510069822"],["INV30","ES2510069833"],
+  ]},
+  { nome:"BJA1-STS4", serial:"HPF003500441", inv:[
+    ["INV1","ES2510069809"],["INV2","ES2510069816"],["INV3","ES2480104923"],["INV4","ES2510047305"],
+    ["INV5","ES2510047230"],["INV6","ES2510069370"],["INV7","ES2510069882"],["INV8","ES2520016644"],
+    ["INV9","ES2510047209"],["INV10","ES2520016712"],["INV11","ES2520016710"],
+  ]},
+  { nome:"BJA1-STS5", serial:"HPF003500455", inv:[
+    ["INV1","ES2510069301"],["INV2","ES2510069853"],["INV3","ES2510069449"],["INV4","ES2510069459"],
+    ["INV5","ES2510069906"],["INV6","ES2510069827"],["INV7","ES2510069846"],["INV8","ES2510069899"],
+    ["INV9","ES2510040904"],["INV10","ES2510040901"],["INV11","ES2510047272"],["INV12","ES2510047336"],
+    ["INV13","ES2510069806"],["INV14","ES2510047323"],["INV15","ES2480105659"],["INV16","ES2510069805"],
+    ["INV17","ES2520016618"],["INV18","ES2510069386"],["INV19","ES2520016711"],["INV20","ES2510047310"],
+    ["INV21","ES2480106155"],["INV22","ES2520016647"],["INV23","ES2510047244"],["INV24","ES2510040892"],
+    ["INV25","ES2510070806"],["INV26","ES2520016680"],["INV27","ES2510069820"],["INV28","ES2510070804"],
+    ["INV29","ES2510070811"],["INV30","ES2510069889"],
+  ]},
+  { nome:"BJA1-STS6", serial:"HPF003500450", inv:[
+    ["INV1","ES2510069883"],["INV2","ES2510047324"],["INV3","ES2510069774"],["INV4","ES2510069450"],
+    ["INV5","ES2510069847"],["INV6","ES2510047297"],["INV7","ES2510069898"],["INV8","ES2510069845"],
+    ["INV9","ES2510069844"],["INV10","ES2510047296"],["INV11","ES2510047295"],["INV12","ES2510069840"],
+    ["INV13","ES2510069834"],["INV14","ES2510069815"],["INV15","ES2510069854"],["INV16","ES2510069950"],
+    ["INV17","ES2510047205"],["INV18","ES2510047229"],["INV19","ES2510040893"],["INV20","ES24C0226687"],
+    ["INV21","ES2510069890"],["INV22","ES2510070821"],["INV23","ES2520016679"],["INV24","ES2510069796"],
+    ["INV25","ES2510069294"],["INV26","ES2510069295"],["INV27","ES2510047201"],["INV28","ES2510047278"],
+    ["INV29","ES2510069929"],["INV30","ES2510047281"],
+  ]},
+  { nome:"BJA2-STS1", serial:"HPF003500448", inv:[
+    ["INV1","ES24C0227243"],["INV2","ES24C0227267"],["INV3","ES2510069749"],["INV4","ES2510069740"],
+    ["INV5","ES2510045026"],["INV6","ES2510069772"],["INV7","ES2510069789"],["INV8","ES2510044979"],
+    ["INV9","ES2520016723"],["INV10","ES24C0160769"],["INV11","ES2510044985"],["INV12","ES2510069788"],
+    ["INV13","ES2510069826"],["INV14","ES2510069824"],["INV15","ES2510069777"],["INV16","ES2520016765"],
+    ["INV17","ES2510069732"],["INV18","ES2510069729"],["INV19","ES2510047282"],["INV20","ES2510047217"],
+    ["INV21","ES24C0166416"],["INV22","ES2510047320"],["INV23","ES2510069746"],["INV24","ES2510069730"],
+    ["INV25","ES2510070901"],["INV26","ES2510070902"],["INV27","ES2510069248"],["INV28","ES2510040898"],
+    ["INV29","ES2510045045"],["INV30","ES2510045048"],
+  ]},
+  { nome:"BJA2-STS2", serial:"XB255570", inv:[
+    ["INV1","ES2510069323"],["INV2","ES2510069379"],["INV3","ES2510069838"],["INV4","ES2510047241"],
+    ["INV5","ES2510045128"],["INV6","ES2510070792"],["INV7","ES2510069837"],["INV8","ES24C0228779"],
+    ["INV9","BN2521034191"],["INV10","ES24C0227266"],["INV11","ES2510070921"],["INV12","ES2510070884"],
+    ["INV13","ES2510040919"],["INV14","ES2510040920"],["INV15","ES2510069848"],["INV16","ES2510047301"],
+    ["INV17","ES2510069828"],["INV18","ES2510069810"],["INV19","ES2510069367"],["INV20","ES2510069378"],
+    ["INV21","BN2521034268"],["INV22","BN2521033659"],["INV23","ES2520016734"],["INV24","BN2521034274"],
+    ["INV25","BN2521034193"],["INV26","BN2521034272"],["INV27","BN2521034196"],["INV28","BN2521034265"],
+    ["INV29","BN2521034247"],["INV30","BN2521034244"],
+  ]},
+  { nome:"BJA2-STS3", serial:"HPF003500454", inv:[
+    ["INV1","ES24C0227269"],["INV2","ES24C0227940"],["INV3","ES24C0227932"],["INV4","ES2510047334"],
+    ["INV5","ES2510047335"],["INV6","ES24C0228677"],["INV7","ES24C0227330"],["INV8","ES24C0228635"],
+    ["INV9","ES24C0228041"],["INV10","BN2521034238"],["INV11","BN2521033563"],["INV12","BN2521034246"],
+    ["INV13","BN2521034243"],["INV14","BN2521034255"],["INV15","BN2521034177"],["INV16","BN2511048516"],
+    ["INV17","6T2539001903"],["INV18","BN2521033598"],["INV19","BN2531002625"],["INV20","6T2539001914"],
+    ["INV21","BN2521034229"],["INV22","BN2521034227"],["INV23","ES2510047330"],["INV24","ES2510069803"],
+    ["INV25","BN2521033622"],["INV26","BN2521034269"],["INV27","BN2521033613"],["INV28","BN2521034202"],
+    ["INV29","BN2521034224"],["INV30","BN2521033631"],
+  ]},
+  { nome:"BJA2-STS4", serial:"HPF003500451", inv:[
+    ["INV1","BN2521034249"],["INV2","BN2521034234"],["INV3","BN2521034165"],["INV4","BN2521034259"],
+    ["INV5","6T2539001911"],["INV6","BN2521034267"],["INV7","BN2531002561"],["INV8","BN2521034266"],
+    ["INV9","BN2521034230"],["INV10","BN2521034254"],["INV11","BN2521034201"],["INV12","6T2539001910"],
+    ["INV13","BN2521034261"],["INV14","BN2521034245"],["INV15","BN2521034225"],["INV16","BN2521034277"],
+    ["INV17","BN2521034242"],["INV18","BN2521034235"],["INV19","BN2521034241"],["INV20","BN2521034278"],
+    ["INV21","BN2521033667"],["INV22","BN2521034208"],["INV23","BN2521034166"],["INV24","BN2521034204"],
+    ["INV25","BN2521034271"],["INV26","BN2521026096"],["INV27","BN2521033679"],["INV28","BN2521034188"],
+    ["INV29","BN2531002596"],["INV30","BN2521034256"],
+  ]},
+  { nome:"BJA2-STS5", serial:"HPF003500442", inv:[
+    ["INV1","BN2521034231"],["INV2","BN2521034270"],["INV3","BN2521034251"],["INV4","BN2521034252"],
+    ["INV5","BN2531002627"],["INV6","BN2521034260"],["INV7","BN2521034161"],["INV8","BN2521034237"],
+    ["INV9","BN2521034189"],["INV10","BN2531002594"],["INV11","BN2521034258"],
+  ]},
+  { nome:"BJA2-STS6", serial:"HPF003500443", inv:[
+    ["INV1","ES2510069340"],["INV2","ES2510069249"],["INV3","ES2510069319"],["INV4","ES2510069318"],
+    ["INV5","ES2510069747"],["INV6","ES2510069817"],["INV7","ES2510069835"],["INV8","ES2510069819"],
+    ["INV9","ES2510069396"],["INV10","ES2510069401"],["INV11","ES24C0228015"],["INV12","ES24C0227355"],
+    ["INV13","ES24C0227379"],["INV14","ES24C0227353"],["INV15","ES24C0227235"],["INV16","ES24C0227387"],
+    ["INV17","ES2520016687"],["INV18","ES2520016685"],["INV19","ES2510069814"],["INV20","ES2510069825"],
+    ["INV21","ES24C0227370"],["INV22","ES24C0228717"],["INV23","ES2510069395"],["INV24","ES2510069400"],
+    ["INV25","ES24C0228721"],["INV26","ES24C0228689"],["INV27","ES2510070913"],["INV28","ES2510070914"],
+    ["INV29","ES24C0227254"],["INV30","ES24C0228001"],
+  ]},
+  { nome:"BJA3-STS1", serial:"XB255575", inv:[
+    ["INV1","GR2549016226"],["INV2","GR2549016222"],["INV3","GR2549004688"],["INV4","GR2549004690"],
+    ["INV5","GR2549004698"],["INV6","ES2510069792"],["INV7","GR2549004736"],["INV8","GR2549004793"],
+    ["INV9","GR2549004788"],["INV10","GR2549016209"],["INV11","GR2549016208"],
+  ]},
+  { nome:"BJA3-STS2", serial:"XB255571", inv:[
+    ["INV1","GR2549002267"],["INV2","GR2549004742"],["INV3","GR2549016202"],["INV4","GR2549016199"],
+    ["INV5","GR2549016219"],["INV6","GR2549004761"],["INV7","GR2549016207"],["INV8","GR2549016216"],
+    ["INV9","GR2549004706"],["INV10","GR2549018092"],["INV11","GR2549018090"],["INV12","GR2549016243"],
+    ["INV13","GR2549013764"],["INV14","GR2549016210"],["INV15","GR2549013767"],["INV16","GR2549009682"],
+    ["INV17","GR2549009680"],["INV18","GR2549004883"],["INV19","GR2549004796"],["INV20","ES2510045010"],
+    ["INV21","GR2549006244"],["INV22","GR2549006243"],["INV23","GR2549004769"],["INV24","GR2549004759"],
+    ["INV25","GR2549016205"],["INV26","GR2549004885"],["INV27","GR2549004782"],["INV28","GR2549016163"],
+    ["INV29","GR2549016170"],["INV30","ES2510045102"],
+  ]},
+  { nome:"BJA3-STS3", serial:"HPF003500456", inv:[
+    ["INV1","ES2510044955"],["INV2","BN2541027902"],["INV3","BN2541027904"],["INV4","GR2549004798"],
+    ["INV5","GR2549004802"],["INV6","GR2549018047"],["INV7","GR2549018045"],["INV8","GR2549016230"],
+    ["INV9","GR2549016224"],["INV10","GR2549004913"],["INV11","GR2549002148"],["INV12","ES2510045100"],
+    ["INV13","GR2549004850"],["INV14","GR2549004834"],["INV15","GR2549004764"],["INV16","GR2549004753"],
+    ["INV17","GR2549004907"],["INV18","ES2520016583"],["INV19","GR2549004721"],["INV20","ES2510069907"],
+    ["INV21","ES2510040925"],["INV22","ES2510040948"],["INV23","ES2510070873"],["INV24","ES2510070801"],
+    ["INV25","ES2510040924"],["INV26","ES2510069330"],["INV27","ES2510069465"],["INV28","ES2510069467"],
+    ["INV29","ES2510069331"],["INV30","ES2510070912"],
+  ]},
+  { nome:"BJA3-STS4", serial:"HPF003500445", inv:[
+    ["INV1","BN2541027848"],["INV2","BN2541027846"],["INV3","BN2541027892"],["INV4","BN2541027897"],
+    ["INV5","BN2541027894"],["INV6","BN2541027906"],["INV7","BN2541027911"],["INV8","ES2510069878"],
+    ["INV9","ES2510069829"],["INV10","GR2549017972"],["INV11","BN2541027893"],["INV12","ES2510047211"],
+    ["INV13","ES2510047208"],["INV14","BN2541027918"],["INV15","BN2541027913"],["INV16","BN2541027895"],
+    ["INV17","BN2541027899"],["INV18","BN2541027890"],["INV19","BN2541027855"],["INV20","GR2549017983"],
+    ["INV21","ES2510040934"],["INV22","ES2510040935"],["INV23","ES2510070872"],["INV24","BN2541027856"],
+    ["INV25","BN2541027854"],["INV26","BN2541027917"],["INV27","BN2541027853"],["INV28","ES2510047315"],
+    ["INV29","ES2510047316"],["INV30","ES2510070864"],
+  ]},
+  { nome:"BJA3-STS5", serial:"HPF003500446", inv:[
+    ["INV1","ES2510069915"],["INV2","ES24C0227915"],["INV3","ES24C0228063"],["INV4","ES24C0227997"],
+    ["INV5","ES24C0228031"],["INV6","ES2510045050"],["INV7","ES2510070858"],["INV8","ES24C0225761"],
+    ["INV9","ES2510070909"],["INV10","ES2510070889"],["INV11","ES2510069849"],["INV12","ES2510069962"],
+    ["INV13","ES2510069960"],["INV14","ES24C0227911"],["INV15","ES24C0227302"],["INV16","ES24C0228616"],
+    ["INV17","ES24C0228723"],["INV18","ES2510069836"],["INV19","ES2510069831"],["INV20","ES2510069842"],
+    ["INV21","ES2510069441"],["INV22","ES2510069440"],["INV23","ES2510070855"],["INV24","ES2510070856"],
+    ["INV25","ES24C0227307"],["INV26","ES24C0227378"],["INV27","ES24C0227393"],["INV28","ES2510047113"],
+    ["INV29","ES2510040907"],["INV30","ES2510040911"],
+  ]},
+  { nome:"BJA3-STS6", serial:"HPF003500444", inv:[
+    ["INV1","ES2520016682"],["INV2","ES2510070905"],["INV3","ES2520016632"],["INV4","ES2510069316"],
+    ["INV5","ES2510069263"],["INV6","ES2510069325"],["INV7","ES2510069279"],["INV8","ES2510069256"],
+    ["INV9","ES24C0227250"],["INV10","ES2510070818"],["INV11","ES2510047200"],["INV12","ES24C0228061"],
+    ["INV13","ES2510069804"],["INV14","ES2510069430"],["INV15","ES2510069429"],["INV16","ES2510070819"],
+    ["INV17","6T2529035688"],["INV18","ES24C0227282"],["INV19","ES24C0227288"],["INV20","ES2510047311"],
+    ["INV21","ES2510047304"],["INV22","BN2541027907"],["INV23","ES2510070906"],["INV24","ES2510070815"],
+    ["INV25","ES2510070813"],["INV26","BN2541027908"],["INV27","BN2541005319"],["INV28","BN2541005314"],
+    ["INV29","BN2541027891"],["INV30","BN2541027912"],
+  ]},
+  { nome:"BJA5-STS1", serial:"HPF003500457", inv:[
+    ["INV1","ES2510044940"],["INV2","ES2510044993"],["INV3","ES2510045038"],["INV4","ES2510045037"],
+    ["INV5","ES2510044995"],["INV6","ES2510045027"],["INV7","ES2510047333"],["INV8","ES2510047327"],
+    ["INV9","ES24C0228695"],["INV10","ES24C0228628"],["INV11","ES2480106164"],["INV12","ES2480105697"],
+    ["INV13","ES24C0228805"],["INV14","ES2510044956"],["INV15","ES24C0227253"],["INV16","ES2510045020"],
+    ["INV17","ES2510045019"],["INV18","ES2510044944"],["INV19","ES2510044952"],["INV20","ES2510045036"],
+    ["INV21","ES2510045046"],["INV22","ES2510045047"],["INV23","ES2510069482"],["INV24","ES2510047303"],
+    ["INV25","ES2510069727"],["INV26","ES2510044951"],["INV27","ES2510044986"],["INV28","ES2510045018"],
+    ["INV29","ES2510045033"],["INV30","ES2510045000"],
+  ]},
+  { nome:"BJA5-STS2", serial:"XB255568", inv:[
+    ["INV1","ES2510069393"],["INV2","ES2510040938"],["INV3","ES2510040939"],["INV4","ES2510040946"],
+    ["INV5","ES2510069349"],["INV6","ES2510040949"],["INV7","ES2510047210"],["INV8","ES2510047207"],
+    ["INV9","ES2510070749"],["INV10","ES2510070868"],["INV11","ES2520016533"],["INV12","ES2510069876"],
+    ["INV13","ES2510070879"],["INV14","ES2510070863"],["INV15","ES2510040917"],["INV16","ES2510040918"],
+    ["INV17","ES2510040982"],["INV18","ES2510040977"],["INV19","ES2510070817"],["INV20","ES2510040984"],
+    ["INV21","ES2510069324"],["INV22","ES2510069477"],["INV23","ES2510070833"],["INV24","ES2510070869"],
+    ["INV25","ES2510069468"],["INV26","ES2510069363"],["INV27","ES2510069802"],["INV28","ES2510047319"],
+    ["INV29","ES2510069298"],["INV30","ES2510069359"],
+  ]},
+  { nome:"BJA5-STS3", serial:"HPF003500453", inv:[
+    ["INV1","GR2549004716"],["INV2","GR2549004717"],["INV3","GR2549004783"],["INV4","GR2549004785"],
+    ["INV5","ES2510069478"],["INV6","ES2520016633"],["INV7","ES2510069841"],["INV8","ES2510069839"],
+    ["INV9","ES2510069808"],["INV10","ES2480105685"],["INV11","ES2520016683"],["INV12","ES2520016637"],
+    ["INV13","ES2510047292"],["INV14","ES2510047291"],["INV15","ES2510047332"],["INV16","ES2510047331"],
+    ["INV17","ES2510069807"],["INV18","ES2510035181"],["INV19","ES2510069924"],["INV20","ES2510069937"],
+    ["INV21","ES2510047326"],["INV22","ES2510047325"],["INV23","ES2510047220"],["INV24","ES2510047238"],
+    ["INV25","ES2510047329"],["INV26","ES2510047140"],["INV27","ES2510040891"],["INV28","ES2510040890"],
+    ["INV29","ES2510069466"],["INV30","ES2510069469"],
+  ]},
+  { nome:"BJA5-STS4", serial:"HPF003500449", inv:[
+    ["INV1","ES2510069302"],["INV2","ES2510069312"],["INV3","ES2480105690"],["INV4","ES2510069925"],
+    ["INV5","ES2510069954"],["INV6","ES2520016589"],["INV7","ES2520016586"],["INV8","ES2510069918"],
+    ["INV9","ES2510069931"],["INV10","ES2510069904"],["INV11","ES2510069938"],["INV12","ES2510069928"],
+    ["INV13","ES2510069934"],["INV14","ES2510069897"],["INV15","ES2510069911"],["INV16","ES2510069818"],
+    ["INV17","ES2510069909"],["INV18","ES2510047302"],["INV19","ES2510047299"],["INV20","ES2510069751"],
+    ["INV21","ES2510047204"],["INV22","ES2510069384"],["INV23","ES2510069385"],["INV24","ES2510069475"],
+    ["INV25","ES2510069437"],["INV26","ES2510069821"],["INV27","ES2510069951"],["INV28","ES2510070796"],
+    ["INV29","ES2510070795"],["INV30","ES2510070862"],
+  ]},
+  { nome:"BJA5-STS5", serial:"HPF003500452", inv:[
+    ["INV1","ES2510069905"],["INV2","ES2510069830"],["INV3","ES2510069851"],["INV4","ES2510047314"],
+    ["INV5","ES2510069917"],["INV6","ES2510047308"],["INV7","ES2510047328"],["INV8","ES2510069916"],
+    ["INV9","ES2510069902"],["INV10","ES2510069855"],["INV11","ES2510047199"],["INV12","ES2520016627"],
+    ["INV13","ES2510069443"],["INV14","ES2510069948"],["INV15","ES2510069856"],["INV16","ES2510069739"],
+    ["INV17","ES2510047306"],["INV18","ES2510069444"],["INV19","ES2510069811"],["INV20","ES2510069812"],
+    ["INV21","ES2510070860"],["INV22","ES2510069262"],["INV23","ES2510069264"],["INV24","ES2510070922"],
+    ["INV25","ES2510040895"],["INV26","ES2510069251"],["INV27","ES2480105547"],["INV28","ES2510070854"],
+    ["INV29","ES2510070861"],["INV30","ES2510069258"],
+  ]},
+];
+const SERIES_MAP = Object.fromEntries([
+  ...GRUPOS.map(g=>[g.nome,g.serial]),
+  ...GRUPOS.flatMap(g=>g.inv.map(([n,s])=>[`${g.nome} · ${n}`,s])),
+]);
 
 // ─── CORES ──────────────────────────────────────────────────────────────────
 const C = {
@@ -171,6 +388,94 @@ function ComboInput({value, onChange, placeholder, groups, options}) {
               onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
               onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
               {o}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SetorSelector({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(new Set());
+  const wrapRef = useRef();
+
+  useEffect(() => {
+    const close = e => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, []);
+
+  const q = value.toLowerCase();
+  const isF = q.length > 0;
+
+  const grupos = GRUPOS.map(g => {
+    const gMatch = g.nome.toLowerCase().includes(q) || g.serial.toLowerCase().includes(q);
+    const inv = isF
+      ? g.inv.filter(([n,s]) => gMatch || n.toLowerCase().includes(q) || s.toLowerCase().includes(q))
+      : g.inv;
+    return { ...g, inv, show: !isF || inv.length > 0 };
+  }).filter(g => g.show);
+
+  const isExp = nome => isF || expanded.has(nome);
+
+  const toggle = (e, nome) => {
+    e.stopPropagation();
+    setExpanded(p => {
+      const n = new Set(p);
+      n.has(nome) ? n.delete(nome) : n.add(nome);
+      return n;
+    });
+  };
+
+  const pick = val => { onChange(val); setOpen(false); };
+
+  const row = { display:"flex", alignItems:"center", cursor:"pointer",
+    margin:"1px 4px", borderRadius:6, padding:"7px 8px" };
+
+  return (
+    <div ref={wrapRef} style={{position:"relative"}}>
+      <input value={value}
+        onChange={e => { onChange(e.target.value); setOpen(true); }}
+        onFocus={e => { e.target.style.borderColor = C.accent; setOpen(true); }}
+        onBlur={e => e.target.style.borderColor = C.border}
+        placeholder="Selecione grupo ou inversor..."
+        autoComplete="off"
+        style={{background:C.surface, border:`1px solid ${C.border}`, borderRadius:8,
+          color:C.text, padding:"10px 14px", fontSize:13, fontFamily:"inherit",
+          outline:"none", width:"100%", boxSizing:"border-box"}}
+      />
+      {open && grupos.length > 0 && (
+        <div style={{position:"absolute", zIndex:999, top:"calc(100% + 4px)", left:0, right:0,
+          background:C.surface, border:`1px solid ${C.border}`, borderRadius:8,
+          boxShadow:"0 8px 24px rgba(0,0,0,.4)", maxHeight:320, overflowY:"auto"}}>
+          {grupos.map(g => (
+            <div key={g.nome}>
+              <div style={{...row, background: isExp(g.nome) ? C.navyLight+"80" : "transparent"}}
+                onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
+                onMouseLeave={e => e.currentTarget.style.background = isExp(g.nome) ? C.navyLight+"80" : "transparent"}>
+                <span onMouseDown={e => toggle(e, g.nome)}
+                  style={{width:16, fontSize:9, color:C.muted, userSelect:"none", flexShrink:0, textAlign:"center"}}>
+                  {isExp(g.nome) ? "▾" : "▸"}
+                </span>
+                <span onMouseDown={e => { e.stopPropagation(); pick(g.nome); }}
+                  style={{flex:1, fontWeight:700, fontSize:13, color:C.text, padding:"0 8px"}}>
+                  {g.nome}
+                </span>
+                <span style={{fontSize:10, color:C.muted, fontFamily:"monospace"}}>{g.serial}</span>
+              </div>
+              {isExp(g.nome) && g.inv.map(([nome,serial]) => (
+                <div key={nome} onMouseDown={() => pick(`${g.nome} · ${nome}`)}
+                  style={{...row, paddingLeft:32, justifyContent:"space-between"}}
+                  onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  <span style={{fontSize:12, color:C.text}}>{nome}</span>
+                  <span style={{fontSize:11, color:C.muted, fontFamily:"monospace"}}>{serial}</span>
+                </div>
+              ))}
             </div>
           ))}
         </div>
@@ -727,8 +1032,7 @@ ${fotosHTML}
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
         <Field label="Setor / Inversor" required>
-          <ComboInput value={setor} onChange={setSetor} placeholder="Inversor, Transformador, Tracker..."
-            groups={[{label:"SDM III",options:SETORES_SDM3},{label:"SDM IV",options:SETORES_SDM4}]}/>
+          <SetorSelector value={setor} onChange={setSetor}/>
         </Field>
         <Field label="Data" required>
           <TInput value={data} onChange={setData} placeholder="DD.MM.AAAA"/>
