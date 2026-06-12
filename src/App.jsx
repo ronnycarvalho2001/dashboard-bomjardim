@@ -650,8 +650,8 @@ export default function App() {
   const [tratativas,setTratativas]   = useState("");
   const [causas,setCausas]           = useState("");
 
-  const [fotos,setFotos]           = useState(Array(32).fill(null).map(()=>({f1:null,f2:null})));
-  const [comentarios,setComentarios] = useState(Array(32).fill(""));
+  const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null})));
+  const [comentarios,setComentarios] = useState(Array(50).fill(""));
   const [numSlots,setNumSlots]     = useState(4);
 
   const [exportMsg,setExportMsg]       = useState("");
@@ -680,7 +680,7 @@ export default function App() {
           f2: s.f2 ? await compressPhoto(s.f2.b64,s.f2.type) : null,
         })));
         const p = {setor,fabricante,num_serie:numSerie,num_os:numOS,
-          data_relatorio:data,natureza,tecnico,tecnico_email:tecnicoEmail,
+          data_relatorio:data,natureza,atividade,tecnico,tecnico_email:tecnicoEmail,
           supervisor,supervisor_email:supervisorEmail,
           introducao,identificacao,tratativas,causas,
           num_slots:numSlots,comentarios:comentarios.slice(0,numSlots),fotos:fotosC};
@@ -693,7 +693,7 @@ export default function App() {
           currentIdRef.current = row.id;
         }
         setAutoSaveMsg("✅ Salvo");
-      } catch(e){ setAutoSaveMsg("❌ Erro"); }
+      } catch(e){ console.error("Supabase save error:",e); setAutoSaveMsg("❌ "+e.message); }
       setTimeout(()=>setAutoSaveMsg(""),3000);
     },4000);
     return ()=>{ clearTimeout(t); setAutoSaveMsg(""); };
@@ -922,7 +922,7 @@ ${fotosHTML}
     setTecnico("");setTecnicoEmail("");
     setSupervisor("");setSupervisorEmail("");
     setIntroducao("");setIdentificacao("");setTratativas("");setCausas("");
-    setFotos(Array(32).fill(null).map(()=>({f1:null,f2:null})));setComentarios(Array(32).fill(""));
+    setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null})));setComentarios(Array(50).fill(""));
     setNumSlots(4);setCompleted(new Set());setStep("info");
   };
 
@@ -999,12 +999,12 @@ ${fotosHTML}
     setIntroducao(row.introducao||""); setIdentificacao(row.identificacao||"");
     setTratativas(row.tratativas||""); setCausas(row.causas||"");
     setNumSlots(row.num_slots||4);
-    const c32 = Array(32).fill("");
-    if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c32[i]=v; });
-    setComentarios(c32);
-    const f32 = Array(32).fill(null).map(()=>({f1:null,f2:null}));
-    if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f32[i]=v; });
-    setFotos(f32);
+    const c50 = Array(50).fill("");
+    if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c50[i]=v; });
+    setComentarios(c50);
+    const f50 = Array(50).fill(null).map(()=>({f1:null,f2:null}));
+    if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f50[i]=v; });
+    setFotos(f50);
     currentIdRef.current = row.id;
     setHistMode(false); setStep("info");
   };
@@ -1168,7 +1168,7 @@ ${fotosHTML}
               borderRadius:6,color:C.muted,cursor:"pointer",fontSize:16,
               display:"flex",alignItems:"center",justifyContent:"center"}}>−</button>
           <span style={{fontSize:13,fontWeight:700,color:C.text,minWidth:20,textAlign:"center"}}>{numSlots}</span>
-          <button onClick={()=>setNumSlots(n=>Math.min(32,n+1))}
+          <button onClick={()=>setNumSlots(n=>Math.min(50,n+1))}
             style={{width:28,height:28,background:C.infoBg,border:`1px solid ${C.accent}55`,
               borderRadius:6,color:C.accent,cursor:"pointer",fontSize:16,
               display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
