@@ -6,33 +6,20 @@ const LOGO_QAIR   = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABVUAAAIPCAYAA
 
 // ─── DADOS ──────────────────────────────────────────────────────────────────
 const TECNICOS = [
-  { nome:"Airton Silva",     email:"a.silva@airbox.pro",    fone:"85 98215-9536" },
-  { nome:"Luan Ribeiro",     email:"l.ribeiro@airbox.pro",  fone:"" },
-  { nome:"Romário Carneiro", email:"r.carneiro@airbox.pro", fone:"" },
-  { nome:"Fabenilson Sousa", email:"f.sousa@airbox.pro",    fone:"" },
+  { nome:"Faulliery Brito", email:"f.brito@airbox.pro",   fone:"" },
+  { nome:"Bruno Félix",     email:"b.felix@airbox.pro",   fone:"" },
+  { nome:"Bruno Cauê",      email:"b.caue@airbox.pro",    fone:"" },
+  { nome:"Alex Facundo",    email:"a.facundo@airbox.pro", fone:"" },
+  { nome:"Fábio Costa",     email:"f.costa@airbox.pro",   fone:"" },
+  { nome:"Emerson Souza",   email:"e.souza@airbox.pro",   fone:"" },
 ];
 const SUPERVISORES = [
-  { nome:"Aldemir Temoteo", email:"a.temoteo@airbox.pro" },
+  { nome:"Marcos Paulo Rabelo", email:"m.rabelo@airbox.pro" },
 ];
 const FABRICANTES = ["INGETEAM","SMA","ABB","Fronius","Huawei","Sungrow","Array","STI","WEG","Railec","Jinko"];
 const SETORES_SDM3 = ["SDM3-1.1","SDM3-1.2","SDM3-2.1","SDM3-2.2","SDM3-3.1","SDM3-3.2","SDM3-4.1","SDM3-4.2","SDM3-5.1","SDM3-5.2","SDM3-6.1","SDM3-6.2","SDM3-7.1","SDM3-7.2"];
 const SETORES_SDM4 = ["SDM4-1.1","SDM4-1.2","SDM4-2.1","SDM4-2.2","SDM4-3.1","SDM4-3.2","SDM4-4.1","SDM4-4.2","SDM4-5.1","SDM4-5.2","SDM4-6.1","SDM4-6.2","SDM4-7.1","SDM4-7.2","SDM4-8.1","SDM4-8.2"];
 const SERIES_MAP  = {
-  "SDM3-1.1":"H10022560002","SDM3-1.2":"H10022560001",
-  "SDM3-2.1":"H10022560004","SDM3-2.2":"H10022560003",
-  "SDM3-3.1":"H10022560006","SDM3-3.2":"H10022560005",
-  "SDM3-4.1":"H10022560008","SDM3-4.2":"H10022560007",
-  "SDM3-5.1":"H10022560010","SDM3-5.2":"H10022560009",
-  "SDM3-6.1":"H10022560012","SDM3-6.2":"H10022560011",
-  "SDM3-7.1":"H10022560014","SDM3-7.2":"H10022560013",
-  "SDM4-1.1":"H10022560016","SDM4-1.2":"H10022560015",
-  "SDM4-2.1":"H10022560018","SDM4-2.2":"H10022560017",
-  "SDM4-3.1":"H10022560020","SDM4-3.2":"H10022560019",
-  "SDM4-4.1":"H10022560022","SDM4-4.2":"H10022560021",
-  "SDM4-5.1":"H10022560024","SDM4-5.2":"H10022560023",
-  "SDM4-6.1":"H10022560026","SDM4-6.2":"H10022560025",
-  "SDM4-7.1":"H10022560028","SDM4-7.2":"H10022560027",
-  "SDM4-8.1":"H10022560030","SDM4-8.2":"H10022560029",
 };
 
 // ─── CORES ──────────────────────────────────────────────────────────────────
@@ -341,7 +328,7 @@ export default function App() {
   const [completed,setCompleted] = useState(new Set());
 
   const [setor,setSetor]       = useState("");
-  const [fabricante,setFabricante] = useState("INGETEAM");
+  const [fabricante,setFabricante] = useState("");
   const [numSerie,setNumSerie]  = useState("");
   const [numOS,setNumOS]       = useState("");
   const [data,setData]         = useState(today());
@@ -625,7 +612,7 @@ ${fotosHTML}
     if (!window.confirm("Criar novo relatório? O atual será salvo no histórico antes de limpar.")) return;
     await salvarRelatorio();
     currentIdRef.current = null;
-    setSetor("");setFabricante("INGETEAM");setNumSerie("");setNumOS("");
+    setSetor("");setFabricante("");setNumSerie("");setNumOS("");
     setData(today());setNatureza("Manutenção Corretiva");setAtividade("");
     setTecnico("");setTecnicoEmail("");
     setSupervisor("");setSupervisorEmail("");
@@ -698,7 +685,7 @@ ${fotosHTML}
     const { data: row, error } = await supabase
       .from('relatorios').select('*').eq('id', id).single();
     if (error || !row) { alert("Erro ao carregar relatório"); return; }
-    setSetor(row.setor||""); setFabricante(row.fabricante||"INGETEAM");
+    setSetor(row.setor||""); setFabricante(row.fabricante||"");
     setNumSerie(row.num_serie||""); setNumOS(row.num_os||"");
     setData(row.data_relatorio||today()); setNatureza(row.natureza||"Manutenção Corretiva");
     setAtividade(row.atividade||"");
