@@ -823,11 +823,12 @@ ${fotosHTML}
       .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
     const fotosHTML = fotosAtivas.map(({s,i})=>{
       const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
+      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
       return `
       <div class="foto-bloco">
         <div class="foto-tit">REGISTRO FOTOGR\u00c1FICO ${String(i+1).padStart(2,'0')}</div>
-        ${imgs.length?`<div class="foto-grid">${
-          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}"/>`).join('')
+        ${imgs.length?`<div class="foto-pair">${
+          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}" class="${cls}"/>`).join('')
         }</div>`:''}
         <div class="comt-box">
           <div class="comt-lbl">Coment\u00e1rios:</div>
