@@ -772,7 +772,7 @@ export default function App() {
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .foto-half{max-width:49%;max-height:220px;object-fit:contain;display:block}
   .foto-third{max-width:32%;max-height:220px;object-fit:contain;display:block}
-  .foto-sixth{max-width:32%;max-height:105px;object-fit:contain;display:block}
+  .foto-sixth{max-width:32%;max-height:220px;object-fit:contain;display:block}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
@@ -866,7 +866,7 @@ ${fotosHTML}
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .foto-half{max-width:49%;max-height:220px;object-fit:contain;display:block}
   .foto-third{max-width:32%;max-height:220px;object-fit:contain;display:block}
-  .foto-sixth{max-width:32%;max-height:105px;object-fit:contain;display:block}
+  .foto-sixth{max-width:32%;max-height:220px;object-fit:contain;display:block}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
