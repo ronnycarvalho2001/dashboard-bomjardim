@@ -731,11 +731,12 @@ export default function App() {
 
     const fotosHTML = fotosAtivas.map(({s,i})=>{
       const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
+      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
       return `
       <div class="foto-bloco">
         <div class="foto-tit">REGISTRO FOTOGRÁFICO ${String(i+1).padStart(2,'0')}</div>
-        ${imgs.length?`<div class="foto-grid">${
-          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}"/>`).join('')
+        ${imgs.length?`<div class="foto-pair">${
+          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}" class="${cls}"/>`).join('')
         }</div>`:''}
         <div class="comt-box">
           <div class="comt-lbl">Comentários:</div>
@@ -767,8 +768,10 @@ export default function App() {
   .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
-  .foto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:#f0f0f0;padding:4px}
-  .foto-grid img{width:100%;height:auto;max-height:120px;object-fit:contain;display:block;background:#fff}
+  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
+  .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
+  .foto-third{max-width:32%;max-height:170px;object-fit:contain;display:block}
+  .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
@@ -857,8 +860,10 @@ ${fotosHTML}
   .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
-  .foto-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;background:#f0f0f0;padding:4px}
-  .foto-grid img{width:100%;height:auto;max-height:120px;object-fit:contain;display:block;background:#fff}
+  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
+  .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
+  .foto-third{max-width:32%;max-height:170px;object-fit:contain;display:block}
+  .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
