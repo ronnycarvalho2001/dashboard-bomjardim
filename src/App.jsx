@@ -731,7 +731,7 @@ export default function App() {
 
     const fotosHTML = fotosAtivas.map(({s,i})=>{
       const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
-      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
+      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':imgs.length<=3?'foto-third':'foto-sixth';
       return `
       <div class="foto-bloco">
         <div class="foto-tit">REGISTRO FOTOGRÁFICO ${String(i+1).padStart(2,'0')}</div>
@@ -769,9 +769,10 @@ export default function App() {
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
   .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
-  .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
-  .foto-third{max-width:32%;max-height:160px;object-fit:contain;display:block}
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
+  .foto-half{max-width:49%;max-height:220px;object-fit:contain;display:block}
+  .foto-third{max-width:32%;max-height:220px;object-fit:contain;display:block}
+  .foto-sixth{max-width:32%;max-height:105px;object-fit:contain;display:block}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
@@ -823,7 +824,7 @@ ${fotosHTML}
       .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
     const fotosHTML = fotosAtivas.map(({s,i})=>{
       const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
-      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
+      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':imgs.length<=3?'foto-third':'foto-sixth';
       return `
       <div class="foto-bloco">
         <div class="foto-tit">REGISTRO FOTOGR\u00c1FICO ${String(i+1).padStart(2,'0')}</div>
@@ -862,9 +863,10 @@ ${fotosHTML}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
   .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
-  .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
-  .foto-third{max-width:32%;max-height:160px;object-fit:contain;display:block}
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
+  .foto-half{max-width:49%;max-height:220px;object-fit:contain;display:block}
+  .foto-third{max-width:32%;max-height:220px;object-fit:contain;display:block}
+  .foto-sixth{max-width:32%;max-height:105px;object-fit:contain;display:block}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
   .comt-txt{font-size:10.5px;line-height:1.4}
