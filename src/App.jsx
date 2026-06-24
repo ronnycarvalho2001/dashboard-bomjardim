@@ -582,14 +582,12 @@ function MiniUpload({foto, onFoto, onRemove, label}) {
   );
 }
 
-// ─── FOTO CARD ─── suporta até 6 imagens em grid + comentário compartilhado
-const FOTO_LABELS=["Foto 1","Foto 2","Foto 3","Foto 4","Foto 5","Foto 6"];
-function FotoCard({n,fotos,comentario,onFoto,onRemove,onComentario}) {
-  const temFoto = fotos.some(f=>!!f);
+// ─── FOTO CARD ─── suporta 1 ou 2 imagens lado a lado + comentário compartilhado
+function FotoCard({n,foto1,foto2,comentario,onFoto1,onFoto2,onRemove1,onRemove2,onComentario}) {
   return (
-    <div style={{background:C.card,border:`1px solid ${temFoto?C.borderLight:C.border}`,
+    <div style={{background:C.card,border:`1px solid ${(foto1||foto2)?C.borderLight:C.border}`,
       borderRadius:12,overflow:"hidden",transition:"border-color .2s",
-      boxShadow:temFoto?`0 0 0 1px ${C.accent}22`:"none"}}>
+      boxShadow:(foto1||foto2)?`0 0 0 1px ${C.accent}22`:"none"}}>
       {/* Header */}
       <div style={{background:C.navy,padding:"8px 14px",display:"flex",
         alignItems:"center",justifyContent:"space-between"}}>
@@ -601,12 +599,12 @@ function FotoCard({n,fotos,comentario,onFoto,onRemove,onComentario}) {
           </span>
         </div>
       </div>
-      {/* Grid de fotos (3 colunas x 2 linhas) */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,padding:4,background:C.surface}}>
-        {fotos.map((foto,fi)=>(
-          <MiniUpload key={fi} foto={foto} onFoto={v=>onFoto(fi,v)} onRemove={()=>onRemove(fi)}
-            label={FOTO_LABELS[fi]}/>
-        ))}
+      {/* Duas colunas de foto */}
+      <div style={{display:"flex",gap:4,padding:4,background:C.surface}}>
+        <MiniUpload foto={foto1} onFoto={onFoto1} onRemove={onRemove1}
+          label="Foto principal"/>
+        <MiniUpload foto={foto2} onFoto={onFoto2} onRemove={onRemove2}
+          label="2ª foto (opcional)"/>
       </div>
       {/* Comentário compartilhado */}
       <div style={{padding:"8px 12px"}}>
@@ -652,7 +650,7 @@ export default function App() {
   const [tratativas,setTratativas]   = useState("");
   const [causas,setCausas]           = useState("");
 
-  const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));
+  const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null})));
   const [comentarios,setComentarios] = useState(Array(50).fill(""));
   const [numSlots,setNumSlots]     = useState(4);
 
@@ -677,11 +675,10 @@ export default function App() {
     const t = setTimeout(async ()=>{
       setAutoSaveMsg("Salvando…");
       try {
-        const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>{
-          const o={};
-          for(let k=1;k<=6;k++){const fk='f'+k; o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null;}
-          return o;
-        }));
+        const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>({
+          f1: s.f1 ? await compressPhoto(s.f1.b64,s.f1.type) : null,
+          f2: s.f2 ? await compressPhoto(s.f2.b64,s.f2.type) : null,
+        })));
         const p = {setor,fabricante,num_serie:numSerie,num_os:numOS,
           data_relatorio:data,natureza,atividade,tecnico,tecnico_email:tecnicoEmail,
           supervisor,supervisor_email:supervisorEmail,
@@ -717,33 +714,29 @@ export default function App() {
     if(s) setSupervisorEmail(s.email);
   };
 
-  const setFotoAt    = (i,k,v)=>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
-  const removeFotoAt = (i,k)  =>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:null};return n;});
+  const setFoto1At   = (i,v)=>setFotos(p=>{const n=[...p];n[i]={...n[i],f1:v};return n;});
+  const setFoto2At   = (i,v)=>setFotos(p=>{const n=[...p];n[i]={...n[i],f2:v};return n;});
+  const removeFoto1  = i   =>setFotos(p=>{const n=[...p];n[i]={...n[i],f1:null};return n;});
+  const removeFoto2  = i   =>setFotos(p=>{const n=[...p];n[i]={...n[i],f2:null};return n;});
   const setComt      = (i,v)=>setComentarios(p=>{const n=[...p];n[i]=v;return n;});
-  const fotoCount = fotos.filter(s=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6).length;
+  const fotoCount = fotos.filter(s=>s.f1||s.f2).length;
 
 
   // ── Exportar PDF via jsPDF (script tag injection) ─────────────────────────
   const buildReportHTML = () => {
     const fotosAtivas = fotos.slice(0,numSlots)
-      .map((s,i)=>({s,i}))
-      .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
+      .map((f,i)=>({f,i}))
+      .filter(({f,i})=>f||comentarios[i]);
 
-    const fotosHTML = fotosAtivas.map(({s,i})=>{
-      const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
-      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
-      return `
+    const fotosHTML = fotosAtivas.map(({f,i})=>`
       <div class="foto-bloco">
-        <div class="foto-tit">REGISTRO FOTOGRÁFICO ${String(i+1).padStart(2,'0')}</div>
-        ${imgs.length?`<div class="foto-pair">${
-          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}" class="${cls}"/>`).join('')
-        }</div>`:''}
+        <div class="foto-tit">REGISTRO FOTOGRÁFICO ${String(i+1).padStart(2,"00")}</div>
+        ${f?`<div class="foto-img"><img src="data:${f.type||'image/jpeg'};base64,${f.b64}"/></div>`:""}
         <div class="comt-box">
           <div class="comt-lbl">Comentários:</div>
-          <div class="comt-txt">${comentarios[i]||''}</div>
+          <div class="comt-txt">${comentarios[i]||""}</div>
         </div>
-      </div>`;
-    }).join('');
+      </div>`).join("");
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
@@ -768,9 +761,8 @@ export default function App() {
   .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
-  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
+  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center}
   .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
-  .foto-third{max-width:32%;max-height:170px;object-fit:contain;display:block}
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
@@ -820,22 +812,20 @@ ${fotosHTML}
   const _buildReportHTML = () => {
     const fotosAtivas = fotos.slice(0,numSlots)
       .map((s,i)=>({s,i}))
-      .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
-    const fotosHTML = fotosAtivas.map(({s,i})=>{
-      const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
-      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':'foto-third';
-      return `
+      .filter(({s,i})=>s.f1||s.f2||comentarios[i]);
+    const fotosHTML = fotosAtivas.map(({s,i})=>`
       <div class="foto-bloco">
         <div class="foto-tit">REGISTRO FOTOGR\u00c1FICO ${String(i+1).padStart(2,'0')}</div>
-        ${imgs.length?`<div class="foto-pair">${
-          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}" class="${cls}"/>`).join('')
+        ${(s.f1||s.f2)?`<div class="foto-pair">${
+          s.f1?`<img src="data:${s.f1.type||'image/jpeg'};base64,${s.f1.b64}" class="${s.f2?'foto-half':'foto-single'}"/>`:''
+        }${
+          s.f2?`<img src="data:${s.f2.type||'image/jpeg'};base64,${s.f2.b64}" class="${s.f1?'foto-half':'foto-single'}"/>`:''
         }</div>`:''}
         <div class="comt-box">
           <div class="comt-lbl">Coment\u00e1rios:</div>
           <div class="comt-txt">${comentarios[i]||''}</div>
         </div>
-      </div>`;
-    }).join('');
+      </div>`).join('');
     return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>
 <title>Relat\u00f3rio ${setor}</title>
 <style>
@@ -861,9 +851,8 @@ ${fotosHTML}
   .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
-  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
+  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center}
   .foto-half{max-width:49%;max-height:200px;object-fit:contain;display:block}
-  .foto-third{max-width:32%;max-height:170px;object-fit:contain;display:block}
   .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
   .comt-box{border-top:1px solid #ddd;padding:5px 10px}
   .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
@@ -933,7 +922,7 @@ ${fotosHTML}
     setTecnico("");setTecnicoEmail("");
     setSupervisor("");setSupervisorEmail("");
     setIntroducao("");setIdentificacao("");setTratativas("");setCausas("");
-    setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));setComentarios(Array(50).fill(""));
+    setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null})));setComentarios(Array(50).fill(""));
     setNumSlots(4);setCompleted(new Set());setStep("info");
   };
 
@@ -960,11 +949,10 @@ ${fotosHTML}
   const salvarRelatorio = async () => {
     setSaveLoading(true); setSaveMsg("");
     try {
-      const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>{
-        const o={};
-        for(let k=1;k<=6;k++){const fk='f'+k; o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null;}
-        return o;
-      }));
+      const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>({
+        f1: s.f1 ? await compressPhoto(s.f1.b64,s.f1.type) : null,
+        f2: s.f2 ? await compressPhoto(s.f2.b64,s.f2.type) : null,
+      })));
       const p = {setor,fabricante,num_serie:numSerie,num_os:numOS,
         data_relatorio:data,natureza,atividade,tecnico,tecnico_email:tecnicoEmail,
         supervisor,supervisor_email:supervisorEmail,
@@ -1014,8 +1002,8 @@ ${fotosHTML}
     const c50 = Array(50).fill("");
     if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c50[i]=v; });
     setComentarios(c50);
-    const f50 = Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null}));
-    if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f50[i]={f1:null,f2:null,f3:null,f4:null,f5:null,f6:null,...v}; });
+    const f50 = Array(50).fill(null).map(()=>({f1:null,f2:null}));
+    if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f50[i]=v; });
     setFotos(f50);
     currentIdRef.current = row.id;
     setHistMode(false); setStep("info");
@@ -1186,13 +1174,15 @@ ${fotosHTML}
               display:"flex",alignItems:"center",justifyContent:"center"}}>+</button>
         </div>
       </div>
-      <div style={{display:"flex",flexDirection:"column",gap:14}}>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
         {Array.from({length:numSlots}).map((_,i)=>(
           <FotoCard key={i} n={i+1}
-            fotos={[fotos[i].f1,fotos[i].f2,fotos[i].f3,fotos[i].f4,fotos[i].f5,fotos[i].f6]}
+            foto1={fotos[i].f1} foto2={fotos[i].f2}
             comentario={comentarios[i]}
-            onFoto={(fi,v)=>{setFotoAt(i,'f'+(fi+1),v);markDone("fotos");}}
-            onRemove={fi=>removeFotoAt(i,'f'+(fi+1))}
+            onFoto1={v=>{setFoto1At(i,v);markDone("fotos");}}
+            onFoto2={v=>{setFoto2At(i,v);markDone("fotos");}}
+            onRemove1={()=>removeFoto1(i)}
+            onRemove2={()=>removeFoto2(i)}
             onComentario={v=>setComt(i,v)}/>
         ))}
       </div>
