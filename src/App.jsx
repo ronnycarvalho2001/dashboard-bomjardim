@@ -665,6 +665,7 @@ export default function App() {
   const [histLoading,setHistLoading]   = useState(false);
   const [saveMsg,setSaveMsg]           = useState("");
   const [autoSaveMsg,setAutoSaveMsg]   = useState("");
+  const [pdfAnexo,setPdfAnexo]         = useState(null);
   const currentIdRef                   = useRef(null);
 
   useEffect(()=>{ if(setor&&SERIES_MAP[setor]) setNumSerie(SERIES_MAP[setor]); },[setor]);
@@ -912,18 +913,59 @@ ${fotosHTML}
 </body></html>`;
   };
 
-  const exportPDF = () => {
-    const html = _buildReportHTML();
-    // Abre nova aba e dispara impressão automaticamente
-    // O navegador oferece "Salvar como PDF" no diálogo de impressão
-    const w = window.open("", "_blank");
-    if (!w) { alert("Permita pop-ups neste site para abrir o PDF."); return; }
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-    // Aguarda imagens carregarem antes de imprimir
-    w.onload = () => setTimeout(() => w.print(), 500);
-    setTimeout(() => { try { w.print(); } catch(e){} }, 1200);
+  const exportPDF = async () => {
+    if (!pdfAnexo) {
+      const html = _buildReportHTML();
+      const w = window.open("", "_blank");
+      if (!w) { alert("Permita pop-ups neste site para abrir o PDF."); return; }
+      w.document.open(); w.document.write(html); w.document.close();
+      w.onload = () => setTimeout(() => w.print(), 500);
+      setTimeout(() => { try { w.print(); } catch(e){} }, 1200);
+      return;
+    }
+    setPdfLoading(true);
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const html = _buildReportHTML();
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText = "position:fixed;left:-9999px;width:794px;height:1123px";
+      document.body.appendChild(iframe);
+      iframe.contentDocument.open(); iframe.contentDocument.write(html); iframe.contentDocument.close();
+      await new Promise(r => setTimeout(r, 600));
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(iframe.contentDocument.body, { scale: 2, useCORS: true, width: 794 });
+      document.body.removeChild(iframe);
+      const { default: jsPDF } = await import("jspdf");
+      const imgW = 210;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      const pageH = 297;
+      const reportPdf = new jsPDF("p", "mm", "a4");
+      let pos = 0;
+      while (pos < imgH) {
+        if (pos > 0) reportPdf.addPage();
+        reportPdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, -pos, imgW, imgH);
+        pos += pageH;
+      }
+      const reportBytes = reportPdf.output("arraybuffer");
+      const mergedPdf = await PDFDocument.create();
+      const reportDoc = await PDFDocument.load(reportBytes);
+      const reportPages = await mergedPdf.copyPages(reportDoc, reportDoc.getPageIndices());
+      reportPages.forEach(p => mergedPdf.addPage(p));
+      const anexoBytes = await pdfAnexo.arrayBuffer();
+      const anexoDoc = await PDFDocument.load(anexoBytes);
+      const anexoPages = await mergedPdf.copyPages(anexoDoc, anexoDoc.getPageIndices());
+      anexoPages.forEach(p => mergedPdf.addPage(p));
+      const finalBytes = await mergedPdf.save();
+      const blob = new Blob([finalBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url;
+      a.download = `Relatorio_${setor||"export"}.pdf`;
+      a.click(); URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Erro ao gerar PDF:", e);
+      alert("Erro ao gerar PDF: " + e.message);
+    }
+    setPdfLoading(false);
   };
 
   const novoRelatorio = async () => {
@@ -936,7 +978,7 @@ ${fotosHTML}
     setSupervisor("");setSupervisorEmail("");
     setIntroducao("");setIdentificacao("");setTratativas("");setCausas("");
     setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));setComentarios(Array(50).fill(""));
-    setNumSlots(4);setCompleted(new Set());setStep("info");
+    setNumSlots(4);setCompleted(new Set());setPdfAnexo(null);setStep("info");
   };
 
   const statsOK=[!!setor,!!numOS,!!tecnico,!!supervisor].filter(Boolean).length;
@@ -1238,6 +1280,39 @@ ${fotosHTML}
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,padding:16}}>
+          <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:.5,
+            textTransform:"uppercase",marginBottom:10}}>Anexar PDF (opcional)</div>
+          <div style={{fontSize:11,color:C.muted,marginBottom:10}}>
+            O arquivo será adicionado ao final do relatório exportado.
+          </div>
+          {pdfAnexo?(
+            <div style={{display:"flex",alignItems:"center",gap:10,
+              background:C.infoBg,border:`1px solid ${C.accent}44`,borderRadius:8,padding:"10px 14px"}}>
+              <span style={{fontSize:18}}>📎</span>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,fontWeight:600,color:C.text,
+                  overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pdfAnexo.name}</div>
+                <div style={{fontSize:10,color:C.muted}}>{(pdfAnexo.size/1024).toFixed(0)} KB</div>
+              </div>
+              <button onClick={()=>setPdfAnexo(null)}
+                style={{background:"none",border:"none",color:C.danger,cursor:"pointer",
+                  fontSize:14,fontWeight:700}}>✕</button>
+            </div>
+          ):(
+            <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+              border:`2px dashed ${C.border}`,borderRadius:8,padding:"14px 16px",
+              cursor:"pointer",transition:"border-color .2s"}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=C.accent}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+              <span style={{fontSize:20}}>📄</span>
+              <span style={{fontSize:12,color:C.muted}}>Clique para selecionar um PDF</span>
+              <input type="file" accept=".pdf" style={{display:"none"}}
+                onChange={e=>{const f=e.target.files[0]; if(f) setPdfAnexo(f); e.target.value="";}}/>
+            </label>
+          )}
         </div>
 
         <div style={{display:"grid",gridTemplateColumns:"1fr",gap:12}}>
