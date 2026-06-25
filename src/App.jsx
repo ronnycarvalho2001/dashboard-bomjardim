@@ -652,6 +652,11 @@ export default function App() {
   const [tratativas,setTratativas]   = useState("");
   const [causas,setCausas]           = useState("");
 
+  const [labelIntroducao,setLabelIntroducao]       = useState("Introdução");
+  const [labelIdentificacao,setLabelIdentificacao] = useState("Identificação do Problema");
+  const [labelTratativas,setLabelTratativas]       = useState("Tratativas");
+  const [labelCausas,setLabelCausas]               = useState("Possível Causa");
+
   const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));
   const [comentarios,setComentarios] = useState(Array(50).fill(""));
   const [numSlots,setNumSlots]     = useState(4);
@@ -801,10 +806,10 @@ export default function App() {
 </div>
 <div class="dh">DESCRIÇÃO:</div>
 <div class="db">
-  ${introducao?`<h3>1. Introdução</h3><p>${introducao}</p>`:""}
-  ${identificacao?`<h3>2. Identificação do Problema</h3><p>${identificacao}</p>`:""}
-  ${tratativas?`<h3>3. Tratativas</h3><p>${tratativas}</p>`:""}
-  ${causas?`<h3>4. Possível Causa</h3><p>${causas}</p>`:""}
+  ${introducao?`<h3>1. ${labelIntroducao}</h3><p>${introducao}</p>`:""}
+  ${identificacao?`<h3>2. ${labelIdentificacao}</h3><p>${identificacao}</p>`:""}
+  ${tratativas?`<h3>3. ${labelTratativas}</h3><p>${tratativas}</p>`:""}
+  ${causas?`<h3>4. ${labelCausas}</h3><p>${causas}</p>`:""}
 </div>
 ${fotosHTML}
 <div class="ass">
@@ -896,10 +901,10 @@ ${fotosHTML}
 </div>
 <div class="dh">DESCRI\u00c7\u00c3O:</div>
 <div class="db">
-  ${introducao?`<h3>1. Introdu\u00e7\u00e3o</h3><p>${introducao}</p>`:''}
-  ${identificacao?`<h3>2. Identifica\u00e7\u00e3o do Problema</h3><p>${identificacao}</p>`:''}
-  ${tratativas?`<h3>3. Tratativas</h3><p>${tratativas}</p>`:''}
-  ${causas?`<h3>4. Poss\u00edvel Causa</h3><p>${causas}</p>`:''}
+  ${introducao?`<h3>1. ${labelIntroducao}</h3><p>${introducao}</p>`:''}
+  ${identificacao?`<h3>2. ${labelIdentificacao}</h3><p>${identificacao}</p>`:''}
+  ${tratativas?`<h3>3. ${labelTratativas}</h3><p>${tratativas}</p>`:''}
+  ${causas?`<h3>4. ${labelCausas}</h3><p>${causas}</p>`:''}
 </div>
 ${fotosHTML}
 <div class="ass">
@@ -977,6 +982,8 @@ ${fotosHTML}
     setTecnico("");setTecnicoEmail("");
     setSupervisor("");setSupervisorEmail("");
     setIntroducao("");setIdentificacao("");setTratativas("");setCausas("");
+    setLabelIntroducao("Introdução");setLabelIdentificacao("Identificação do Problema");
+    setLabelTratativas("Tratativas");setLabelCausas("Possível Causa");
     setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));setComentarios(Array(50).fill(""));
     setNumSlots(4);setCompleted(new Set());setPdfAnexo(null);setStep("info");
   };
@@ -1175,13 +1182,13 @@ ${fotosHTML}
 
   const renderDesc=()=>{
     const secoes=[
-      {key:"introducao",     label:"1. Introdução",               val:introducao,    set:setIntroducao,
+      {key:"introducao",     num:1, label:labelIntroducao,    setLabel:setLabelIntroducao,    val:introducao,    set:setIntroducao,
        ph:"Descreva o objetivo e contexto desta manutenção..."},
-      {key:"identificacao",  label:"2. Identificação do Problema", val:identificacao, set:setIdentificacao,
+      {key:"identificacao",  num:2, label:labelIdentificacao,  setLabel:setLabelIdentificacao,  val:identificacao, set:setIdentificacao,
        ph:"Descreva a falha identificada no equipamento..."},
-      {key:"tratativas",     label:"3. Tratativas",                val:tratativas,    set:setTratativas,
+      {key:"tratativas",     num:3, label:labelTratativas,     setLabel:setLabelTratativas,     val:tratativas,    set:setTratativas,
        ph:"Descreva os procedimentos e intervenções realizadas..."},
-      {key:"causas",         label:"4. Possível Causa",            val:causas,        set:setCausas,
+      {key:"causas",         num:4, label:labelCausas,         setLabel:setLabelCausas,         val:causas,        set:setCausas,
        ph:"Aponte a causa raiz ou provável da falha..."},
     ];
     return (
@@ -1192,10 +1199,17 @@ ${fotosHTML}
             Preencha cada seção com os detalhes da ocorrência.
           </div>
         </div>
-        {secoes.map(({key,label,val,set,ph})=>(
+        {secoes.map(({key,num,label,setLabel,val,set,ph})=>(
           <div key={key} style={{background:C.surface,borderRadius:10,border:`1px solid ${C.border}`,padding:16}}>
-            <div style={{marginBottom:8}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.text}}>{label}</div>
+            <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:C.accent}}>{num}.</span>
+              <input
+                value={label}
+                onChange={e=>{setLabel(e.target.value);markDone("desc");}}
+                style={{fontSize:13,fontWeight:700,color:C.text,border:"none",
+                  borderBottom:`1px dashed ${C.border}`,background:"transparent",
+                  outline:"none",flex:1,padding:"1px 0"}}
+              />
             </div>
             <TArea value={val} onChange={v=>{set(v);markDone("desc");}} placeholder={ph} rows={3}/>
           </div>
