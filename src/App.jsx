@@ -1380,7 +1380,7 @@ ${fotosHTML}
                 else{setChecklistType(key);setChecklistItems(val.items.map(()=>({ok:false,nok:false,obs:""})));}
               }} style={{padding:"10px 12px",borderRadius:8,
                 border:`1.5px solid ${checklistType===key?C.accent:C.border}`,
-                background:checklistType===key?"#e8f0fe":C.surface,
+                background:checklistType===key?"#1e3a6e":C.surface,
                 color:checklistType===key?C.accent:C.text,
                 fontWeight:checklistType===key?700:400,fontSize:12,cursor:"pointer",
                 textAlign:"left",fontFamily:"inherit",transition:"all .15s"}}>
@@ -1414,7 +1414,7 @@ ${fotosHTML}
             </div>
             {/* Col headers */}
             <div style={{display:"grid",gridTemplateColumns:"170px 1fr 48px 48px",
-              background:"#f0f4f8",borderBottom:`1px solid ${C.border}`,
+              background:"#162035",borderBottom:`1px solid ${C.border}`,
               padding:"6px 12px",fontSize:10,fontWeight:700,color:C.muted,
               letterSpacing:.5,textTransform:"uppercase",gap:8}}>
               <div>Item</div><div>Método de Verificação</div>
@@ -1424,8 +1424,8 @@ ${fotosHTML}
             {/* Groups */}
             {Object.entries(groups).map(([grp,rows])=>(
               <div key={grp} style={{borderBottom:`1px solid ${C.border}`}}>
-                <div style={{background:"#e8edf5",padding:"5px 12px",fontSize:10,
-                  fontWeight:700,color:"#1a2744",letterSpacing:.3,textTransform:"uppercase",
+                <div style={{background:"#1a2744",padding:"5px 12px",fontSize:10,
+                  fontWeight:700,color:"#93c5fd",letterSpacing:.3,textTransform:"uppercase",
                   borderBottom:`1px solid ${C.border}`}}>
                   {grp}
                 </div>
@@ -1435,7 +1435,7 @@ ${fotosHTML}
                     <div key={index} style={{display:"grid",
                       gridTemplateColumns:"1fr 48px 48px",
                       borderBottom:j<rows.length-1?`1px solid ${C.border}`:"none",
-                      background:j%2===0?"#fff":"#fafafa",padding:"8px 12px",
+                      background:j%2===0?C.surface:"#162035",padding:"8px 12px",
                       gap:8,alignItems:"start"}}>
                       <div>
                         <div style={{fontSize:11,color:C.text,lineHeight:1.5,marginBottom:4}}>{metodo}</div>
@@ -1475,7 +1475,7 @@ ${fotosHTML}
               </div>
             ))}
             {/* Summary bar */}
-            <div style={{padding:"8px 12px",background:"#f0f4f8",display:"flex",gap:20,fontSize:11,borderTop:`1px solid ${C.border}`}}>
+            <div style={{padding:"8px 12px",background:"#162035",display:"flex",gap:20,fontSize:11,borderTop:`1px solid ${C.border}`}}>
               <span style={{color:"#16a34a",fontWeight:700}}>✓ OK: {okCount}</span>
               <span style={{color:"#dc2626",fontWeight:700}}>✕ NOK: {nokCount}</span>
               <span style={{color:C.muted}}>Pendentes: {pendCount} / {checklistItems.length}</span>
@@ -1531,7 +1531,7 @@ ${fotosHTML}
             <div style={{fontSize:11,fontWeight:700,color:C.muted,letterSpacing:.5,
               textTransform:"uppercase",marginBottom:10}}>Checklist Selecionado</div>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",
-              background:"#e8f0fe",border:`1px solid ${C.accent}44`,borderRadius:8,padding:"10px 14px"}}>
+              background:"#1e3a6e",border:`1px solid ${C.accent}44`,borderRadius:8,padding:"10px 14px"}}>
               <div>
                 <div style={{fontSize:12,fontWeight:700,color:C.accent}}>{CHECKLISTS[checklistType].label}</div>
                 <div style={{fontSize:11,color:C.muted,marginTop:2}}>
