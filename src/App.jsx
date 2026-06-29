@@ -680,8 +680,9 @@ function MiniUpload({foto, onFoto, onRemove, label}) {
 
 // ─── FOTO CARD ─── suporta até 6 imagens em grid + comentário compartilhado
 const FOTO_LABELS=["Foto 1","Foto 2","Foto 3","Foto 4","Foto 5","Foto 6"];
-function FotoCard({n,fotos,comentario,onFoto,onRemove,onComentario}) {
+function FotoCard({n,fotos,numFotos,comentario,onFoto,onRemove,onComentario,onAddFoto}) {
   const temFoto = fotos.some(f=>!!f);
+  const visivel = numFotos||1;
   return (
     <div style={{background:C.card,border:`1px solid ${temFoto?C.borderLight:C.border}`,
       borderRadius:12,overflow:"hidden",transition:"border-color .2s",
@@ -696,14 +697,32 @@ function FotoCard({n,fotos,comentario,onFoto,onRemove,onComentario}) {
             REGISTRO FOTOGRÁFICO {String(n).padStart(2,"0")}
           </span>
         </div>
+        <span style={{fontSize:10,color:C.dim}}>{visivel}/6 foto{visivel!==1?"s":""}</span>
       </div>
-      {/* Grid de fotos (3 colunas x 2 linhas) */}
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4,padding:4,background:C.surface}}>
-        {fotos.map((foto,fi)=>(
+      {/* Grid de fotos */}
+      <div style={{display:"grid",
+        gridTemplateColumns:visivel===1?"1fr":"1fr 1fr 1fr",
+        gap:4,padding:4,background:C.surface}}>
+        {fotos.slice(0,visivel).map((foto,fi)=>(
           <MiniUpload key={fi} foto={foto} onFoto={v=>onFoto(fi,v)} onRemove={()=>onRemove(fi)}
             label={FOTO_LABELS[fi]}/>
         ))}
       </div>
+      {/* Botão adicionar foto */}
+      {visivel<6&&(
+        <div style={{padding:"0 4px 4px",background:C.surface}}>
+          <button onClick={onAddFoto}
+            style={{width:"100%",padding:"6px 10px",background:"none",
+              border:`1px dashed ${C.border}`,borderRadius:6,color:C.muted,
+              cursor:"pointer",fontSize:11,fontFamily:"inherit",
+              display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+              transition:"border-color .15s,color .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor=C.accent;e.currentTarget.style.color=C.accent;}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.color=C.muted;}}>
+            + Adicionar foto
+          </button>
+        </div>
+      )}
       {/* Comentário compartilhado */}
       <div style={{padding:"8px 12px"}}>
         <div style={{fontSize:10,fontWeight:700,letterSpacing:.6,color:C.muted,
@@ -756,6 +775,7 @@ export default function App() {
   const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));
   const [comentarios,setComentarios] = useState(Array(50).fill(""));
   const [numSlots,setNumSlots]     = useState(4);
+  const [numFotosPerSlot,setNumFotosPerSlot] = useState(Array(50).fill(1));
 
   const [exportMsg,setExportMsg]         = useState("");
   const [checklistType,setChecklistType] = useState(null);
@@ -832,6 +852,7 @@ export default function App() {
   const setFotoAt    = (i,k,v)=>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
   const removeFotoAt = (i,k)  =>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:null};return n;});
   const setComt      = (i,v)=>setComentarios(p=>{const n=[...p];n[i]=v;return n;});
+  const addFotoSlot  = (i)=>setNumFotosPerSlot(p=>{const n=[...p];n[i]=Math.min(6,(n[i]||1)+1);return n;});
   const fotoCount = fotos.filter(s=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6).length;
 
 
@@ -1118,6 +1139,7 @@ ${checklistType&&checklistItems.length?(()=>{
     setLabelIntroducao("Introdução");setLabelIdentificacao("Identificação do Problema");
     setLabelTratativas("Tratativas");setLabelCausas("Possível Causa");
     setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));setComentarios(Array(50).fill(""));
+    setNumFotosPerSlot(Array(50).fill(1));
     setNumSlots(4);setCompleted(new Set());setChecklistType(null);setChecklistItems([]);setStep("info");
   };
 
@@ -1209,8 +1231,12 @@ ${checklistType&&checklistItems.length?(()=>{
     if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c50[i]=v; });
     setComentarios(c50);
     const f50 = Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null}));
-    if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f50[i]={f1:null,f2:null,f3:null,f4:null,f5:null,f6:null,...v}; });
-    setFotos(f50);
+    const nfps = Array(50).fill(1);
+    if (row.fotos?.length) row.fotos.forEach((v,i)=>{
+      if(v){ f50[i]={f1:null,f2:null,f3:null,f4:null,f5:null,f6:null,...v};
+        nfps[i]=Math.max(1,['f1','f2','f3','f4','f5','f6'].filter(k=>v[k]).length); }
+    });
+    setFotos(f50); setNumFotosPerSlot(nfps);
     currentIdRef.current = row.id;
     setChecklistType(row.checklist_type||null);
     setChecklistItems(row.checklist_items||[]);
@@ -1393,10 +1419,12 @@ ${checklistType&&checklistItems.length?(()=>{
         {Array.from({length:numSlots}).map((_,i)=>(
           <FotoCard key={i} n={i+1}
             fotos={[fotos[i].f1,fotos[i].f2,fotos[i].f3,fotos[i].f4,fotos[i].f5,fotos[i].f6]}
+            numFotos={numFotosPerSlot[i]||1}
             comentario={comentarios[i]}
             onFoto={(fi,v)=>{setFotoAt(i,'f'+(fi+1),v);markDone("fotos");}}
             onRemove={fi=>removeFotoAt(i,'f'+(fi+1))}
-            onComentario={v=>setComt(i,v)}/>
+            onComentario={v=>setComt(i,v)}
+            onAddFoto={()=>addFotoSlot(i)}/>
         ))}
       </div>
       <div style={{display:"flex",justifyContent:"space-between"}}>
