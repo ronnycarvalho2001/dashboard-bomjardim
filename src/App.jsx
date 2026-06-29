@@ -771,7 +771,7 @@ export default function App() {
   .db h3{font-size:11.5px;font-weight:700;margin:8px 0 3px;color:#1a2744}
   .db h3:first-child{margin-top:0}
   .db p{font-size:11px;line-height:1.6;margin-bottom:4px}
-  .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
+  .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
   .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
@@ -865,7 +865,7 @@ ${fotosHTML}
   .db h3{font-size:11.5px;font-weight:700;margin:8px 0 3px;color:#1a2744}
   .db h3:first-child{margin-top:0}
   .db p{font-size:11px;line-height:1.6;margin-bottom:4px}
-  .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden}
+  .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
   .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
@@ -937,6 +937,12 @@ ${fotosHTML}
       document.body.appendChild(iframe);
       iframe.contentDocument.open(); iframe.contentDocument.write(html); iframe.contentDocument.close();
       await new Promise(r => setTimeout(r, 600));
+      const avoidBreakEls = Array.from(iframe.contentDocument.querySelectorAll('.foto-bloco, .ass'));
+      const bodyRect = iframe.contentDocument.body.getBoundingClientRect();
+      const blockedRanges = avoidBreakEls.map(el => {
+        const rect = el.getBoundingClientRect();
+        return { topPx: rect.top - bodyRect.top, botPx: rect.top - bodyRect.top + rect.height };
+      });
       const { default: html2canvas } = await import("html2canvas");
       const canvas = await html2canvas(iframe.contentDocument.body, { scale: 2, useCORS: true, width: 794 });
       document.body.removeChild(iframe);
@@ -944,12 +950,20 @@ ${fotosHTML}
       const imgW = 210;
       const imgH = (canvas.height * imgW) / canvas.width;
       const pageH = 297;
+      const pixToMM = px => px * imgW / 794;
+      const blockedMM = blockedRanges.map(r => ({ top: pixToMM(r.topPx), bot: pixToMM(r.botPx) }));
       const reportPdf = new jsPDF("p", "mm", "a4");
       let pos = 0;
       while (pos < imgH) {
         if (pos > 0) reportPdf.addPage();
         reportPdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, -pos, imgW, imgH);
-        pos += pageH;
+        let nextCut = pos + pageH;
+        for (const { top, bot } of blockedMM) {
+          if (top > pos && top < nextCut && bot > nextCut) {
+            nextCut = Math.min(nextCut, top);
+          }
+        }
+        pos = nextCut;
       }
       const reportBytes = reportPdf.output("arraybuffer");
       const mergedPdf = await PDFDocument.create();
@@ -1069,7 +1083,7 @@ ${fotosHTML}
     if (row.fotos?.length) row.fotos.forEach((v,i)=>{ if(v) f50[i]={f1:null,f2:null,f3:null,f4:null,f5:null,f6:null,...v}; });
     setFotos(f50);
     currentIdRef.current = row.id;
-    setHistMode(false); setStep("info");
+    setPdfAnexo(null); setHistMode(false); setStep("info");
   };
 
   // ── Apagar relatório ─────────────────────────────────────────────────────
