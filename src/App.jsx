@@ -790,14 +790,23 @@ export default function App() {
           introducao,identificacao,tratativas,causas,
           num_slots:numSlots,comentarios:comentarios.slice(0,numSlots),fotos:fotosC,
           checklist_type:checklistType||null,checklist_items:checklistItems.length?checklistItems:null};
-        if (currentIdRef.current) {
-          const {error} = await supabase.from('relatorios').update(p).eq('id',currentIdRef.current);
+        const tryAutoSave = async (payload) => {
+          const isUpdate = !!currentIdRef.current;
+          const q = isUpdate
+            ? supabase.from('relatorios').update(payload).eq('id',currentIdRef.current)
+            : supabase.from('relatorios').insert(payload).select('id').single();
+          let {data:row,error} = await q;
+          if (error?.message?.includes('checklist')) {
+            const {checklist_type:_ct,checklist_items:_ci,...rest} = payload;
+            const q2 = isUpdate
+              ? supabase.from('relatorios').update(rest).eq('id',currentIdRef.current)
+              : supabase.from('relatorios').insert(rest).select('id').single();
+            ({data:row,error} = await q2);
+          }
           if (error) throw error;
-        } else {
-          const {data:row,error} = await supabase.from('relatorios').insert(p).select('id').single();
-          if (error) throw error;
-          currentIdRef.current = row.id;
-        }
+          if (!isUpdate && row) currentIdRef.current = row.id;
+        };
+        await tryAutoSave(p);
         setAutoSaveMsg("✅ Salvo");
       } catch(e){ console.error("Supabase save error:",e); setAutoSaveMsg("❌ "+e.message); }
       setTimeout(()=>setAutoSaveMsg(""),3000);
@@ -1048,6 +1057,43 @@ ${fotosHTML}
     <div class="ab"><div class="an">${supervisor}</div>
       <div class="ae">E-mail: ${supervisorEmail}</div></div></div>
 </div>
+${checklistType&&checklistItems.length?(()=>{
+  const cl=CHECKLISTS[checklistType];
+  const groups={};
+  cl.items.forEach((it,i)=>{if(!groups[it.item])groups[it.item]=[];groups[it.item].push({...it,idx:i});});
+  const rowsHTML=Object.entries(groups).map(([grp,rows])=>
+    rows.map(({metodo,idx},j)=>{
+      const ci=checklistItems[idx]||{ok:false,nok:false,obs:''};
+      return `<tr style="background:${j%2===0?'#fff':'#f9fafb'}">
+        ${j===0?`<td rowspan="${rows.length}" style="padding:6px 8px;font-weight:700;font-size:10px;color:#1a2744;border-right:1px solid #ddd;border-bottom:1px solid #e0e0e0;vertical-align:middle">${grp}</td>`:''}
+        <td style="padding:6px 8px;font-size:10px;line-height:1.45;border-bottom:1px solid #e0e0e0">${metodo}</td>
+        <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.ok?'#16a34a':'#bbb'};font-size:14px;font-weight:700">${ci.ok?'&#10003;':'&#9744;'}</td>
+        <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.nok?'#dc2626':'#bbb'};font-size:14px;font-weight:700">${ci.nok?'&#10005;':'&#9744;'}</td>
+        <td style="padding:6px 8px;font-size:10px;color:#444;border-bottom:1px solid #e0e0e0">${ci.obs||''}</td>
+      </tr>`;
+    }).join('')
+  ).join('');
+  return `<div style="page-break-before:always">
+<div class="dh">${cl.label.toUpperCase()}</div>
+<table style="width:100%;border-collapse:collapse;border:1px solid #bbb;border-top:none;font-size:10px">
+<thead><tr style="background:#1a2744;color:#fff">
+  <th style="padding:6px 8px;font-weight:700;text-align:left;width:20%;border-right:1px solid #2e3d5c">Item</th>
+  <th style="padding:6px 8px;font-weight:700;text-align:left;width:50%">M\u00e9todo de Verifica\u00e7\u00e3o</th>
+  <th style="padding:6px 8px;font-weight:700;text-align:center;width:6%">OK</th>
+  <th style="padding:6px 8px;font-weight:700;text-align:center;width:6%">NOK</th>
+  <th style="padding:6px 8px;font-weight:700;text-align:left;width:18%">Observa\u00e7\u00f5es</th>
+</tr></thead>
+<tbody>${rowsHTML}</tbody>
+</table>
+<div style="border:1px solid #bbb;border-top:none;padding:6px 10px;font-size:10px;background:#f0f4f8">
+  <span style="color:#16a34a;font-weight:700">&#10003; OK: ${checklistItems.filter(i=>i.ok).length}</span>
+  &nbsp;&nbsp;
+  <span style="color:#dc2626;font-weight:700">&#10005; NOK: ${checklistItems.filter(i=>i.nok).length}</span>
+  &nbsp;&nbsp;
+  <span style="color:#666">Pendentes: ${checklistItems.filter(i=>!i.ok&&!i.nok).length}/${checklistItems.length}</span>
+</div>
+</div>`;
+})():''}
 </body></html>`;
   };
 
@@ -1109,14 +1155,23 @@ ${fotosHTML}
         introducao,identificacao,tratativas,causas,
         num_slots:numSlots,comentarios:comentarios.slice(0,numSlots),fotos:fotosC,
         checklist_type:checklistType||null,checklist_items:checklistItems.length?checklistItems:null};
-      if (currentIdRef.current) {
-        const {error} = await supabase.from('relatorios').update(p).eq('id',currentIdRef.current);
+      const saveWithFallback = async (payload) => {
+        const isUpdate = !!currentIdRef.current;
+        const q = isUpdate
+          ? supabase.from('relatorios').update(payload).eq('id',currentIdRef.current)
+          : supabase.from('relatorios').insert(payload).select('id').single();
+        let {data:row,error} = await q;
+        if (error?.message?.includes('checklist')) {
+          const {checklist_type:_ct,checklist_items:_ci,...rest} = payload;
+          const q2 = isUpdate
+            ? supabase.from('relatorios').update(rest).eq('id',currentIdRef.current)
+            : supabase.from('relatorios').insert(rest).select('id').single();
+          ({data:row,error} = await q2);
+        }
         if (error) throw error;
-      } else {
-        const {data:row,error} = await supabase.from('relatorios').insert(p).select('id').single();
-        if (error) throw error;
-        currentIdRef.current = row.id;
-      }
+        if (!isUpdate && row) currentIdRef.current = row.id;
+      };
+      await saveWithFallback(p);
       setSaveMsg("✅ Salvo!");
     } catch(e) {
       setSaveMsg("❌ " + (e.message||"Erro ao salvar"));
