@@ -965,13 +965,14 @@ ${(()=>{
   cl.items.forEach((it,i)=>{if(!groups[it.item])groups[it.item]=[];groups[it.item].push({...it,index:i});});
   return Object.entries(groups).map(([grp,rows])=>
     rows.map(({metodo,index},j)=>{
-      const ci=checklistItems[index]||{ok:false,nok:false,obs:''};
+      const ci=checklistItems[index]||{ok:false,nok:false,obs:'',inversores:[]};
+      const invChips=(ci.nok&&ci.inversores&&ci.inversores.length)?`<div style="margin-top:3px"><span style="font-size:8px;color:#666;font-weight:700">Inv: </span>${[...ci.inversores].sort((a,b)=>a-b).map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:#dc2626;color:#fff;border-radius:3px;font-size:7px;font-weight:700;margin:1px">${n}</span>`).join('')}</div>`:'';
       return `<tr style="background:${j%2===0?'#fff':'#f9fafb'}">
         ${j===0?`<td rowspan="${rows.length}" style="padding:6px 8px;font-weight:700;font-size:10px;color:#1a2744;border-right:1px solid #ddd;border-bottom:1px solid #e0e0e0;vertical-align:middle">${grp}</td>`:''}
         <td style="padding:6px 8px;line-height:1.45;border-bottom:1px solid #e0e0e0">${metodo}</td>
         <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.ok?'#16a34a':'#bbb'};font-size:14px;font-weight:700">${ci.ok?'✓':'☐'}</td>
         <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.nok?'#dc2626':'#bbb'};font-size:14px;font-weight:700">${ci.nok?'✕':'☐'}</td>
-        <td style="padding:6px 8px;color:#444;border-bottom:1px solid #e0e0e0">${ci.obs||''}</td>
+        <td style="padding:6px 8px;color:#444;border-bottom:1px solid #e0e0e0;vertical-align:top">${ci.obs||''}${invChips}</td>
       </tr>`;
     }).join('')
   ).join('');
@@ -1084,13 +1085,14 @@ ${checklistType&&checklistItems.length?(()=>{
   cl.items.forEach((it,i)=>{if(!groups[it.item])groups[it.item]=[];groups[it.item].push({...it,idx:i});});
   const rowsHTML=Object.entries(groups).map(([grp,rows])=>
     rows.map(({metodo,idx},j)=>{
-      const ci=checklistItems[idx]||{ok:false,nok:false,obs:''};
+      const ci=checklistItems[idx]||{ok:false,nok:false,obs:'',inversores:[]};
+      const invChips=(ci.nok&&ci.inversores&&ci.inversores.length)?`<div style="margin-top:3px"><span style="font-size:8px;color:#666;font-weight:700">Inv: </span>${[...ci.inversores].sort((a,b)=>a-b).map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:#dc2626;color:#fff;border-radius:3px;font-size:7px;font-weight:700;margin:1px">${n}</span>`).join('')}</div>`:'';
       return `<tr style="background:${j%2===0?'#fff':'#f9fafb'}">
         ${j===0?`<td rowspan="${rows.length}" style="padding:6px 8px;font-weight:700;font-size:10px;color:#1a2744;border-right:1px solid #ddd;border-bottom:1px solid #e0e0e0;vertical-align:middle">${grp}</td>`:''}
         <td style="padding:6px 8px;font-size:10px;line-height:1.45;border-bottom:1px solid #e0e0e0">${metodo}</td>
         <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.ok?'#16a34a':'#bbb'};font-size:14px;font-weight:700">${ci.ok?'&#10003;':'&#9744;'}</td>
         <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.nok?'#dc2626':'#bbb'};font-size:14px;font-weight:700">${ci.nok?'&#10005;':'&#9744;'}</td>
-        <td style="padding:6px 8px;font-size:10px;color:#444;border-bottom:1px solid #e0e0e0">${ci.obs||''}</td>
+        <td style="padding:6px 8px;font-size:10px;color:#444;border-bottom:1px solid #e0e0e0;vertical-align:top">${ci.obs||''}${invChips}</td>
       </tr>`;
     }).join('')
   ).join('');
@@ -1444,6 +1446,9 @@ ${checklistType&&checklistItems.length?(()=>{
     const okCount=checklistItems.filter(i=>i.ok).length;
     const nokCount=checklistItems.filter(i=>i.nok).length;
     const pendCount=checklistItems.filter(i=>!i.ok&&!i.nok).length;
+    const grupoNome=setor.split(' · ')[0].trim();
+    const grupoSTS=GRUPOS.find(g=>g.nome===grupoNome);
+    const inversoresDaSTS=checklistType==='inversor_semestral'&&grupoSTS?grupoSTS.inv:[];
     return (
       <div style={PG}>
         <div>
@@ -1460,7 +1465,7 @@ ${checklistType&&checklistItems.length?(()=>{
             {Object.entries(CHECKLISTS).map(([key,val])=>(
               <button key={key} onClick={()=>{
                 if(checklistType===key){setChecklistType(null);setChecklistItems([]);}
-                else{setChecklistType(key);setChecklistItems(val.items.map(()=>({ok:false,nok:false,obs:""})));}
+                else{setChecklistType(key);setChecklistItems(val.items.map(()=>({ok:false,nok:false,obs:"",inversores:[]})));}
               }} style={{padding:"10px 12px",borderRadius:8,
                 border:`1.5px solid ${checklistType===key?C.accent:C.border}`,
                 background:checklistType===key?"#1e3a6e":C.surface,
@@ -1513,7 +1518,7 @@ ${checklistType&&checklistItems.length?(()=>{
                   {grp}
                 </div>
                 {rows.map(({metodo,index},j)=>{
-                  const ci=checklistItems[index]||{ok:false,nok:false,obs:""};
+                  const ci=checklistItems[index]||{ok:false,nok:false,obs:"",inversores:[]};
                   return (
                     <div key={index} style={{display:"grid",
                       gridTemplateColumns:"1fr 48px 48px",
@@ -1529,9 +1534,38 @@ ${checklistType&&checklistItems.length?(()=>{
                           style={{width:"100%",border:`1px solid ${C.border}`,borderRadius:5,
                             padding:"4px 8px",fontSize:11,resize:"vertical",fontFamily:"inherit",
                             background:C.bg,color:C.text}}/>
+                        {inversoresDaSTS.length>0&&ci.nok&&(
+                          <div style={{marginTop:6}}>
+                            <div style={{fontSize:10,color:C.muted,fontWeight:700,marginBottom:4,letterSpacing:.3,textTransform:"uppercase"}}>
+                              Inversores afetados:
+                            </div>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:3}}>
+                              {inversoresDaSTS.map(([,],idx)=>{
+                                const num=idx+1;
+                                const sel=(ci.inversores||[]).includes(num);
+                                return (
+                                  <button key={num}
+                                    onClick={()=>setChecklistItems(p=>{
+                                      const n=[...p];const c={...n[index]};
+                                      const invs=[...(c.inversores||[])];
+                                      const pos=invs.indexOf(num);
+                                      if(pos>=0)invs.splice(pos,1);else invs.push(num);
+                                      c.inversores=invs;n[index]=c;return n;
+                                    })}
+                                    style={{width:26,height:26,borderRadius:4,fontSize:10,fontWeight:700,
+                                      border:`1.5px solid ${sel?"#dc2626":C.border}`,
+                                      background:sel?"#dc2626":"transparent",
+                                      color:sel?"#fff":C.muted,cursor:"pointer",padding:0,fontFamily:"inherit"}}>
+                                    {num}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div style={{display:"flex",justifyContent:"center",paddingTop:2}}>
-                        <button onClick={()=>setChecklistItems(p=>{const n=[...p];n[index]={...n[index],ok:!ci.ok,nok:false};return n;})}
+                        <button onClick={()=>setChecklistItems(p=>{const n=[...p];n[index]={...n[index],ok:!ci.ok,nok:false,inversores:[]};return n;})}
                           style={{width:38,height:38,borderRadius:8,
                             border:`2px solid ${ci.ok?"#16a34a":C.border}`,
                             background:ci.ok?"#16a34a":"transparent",
@@ -1542,7 +1576,7 @@ ${checklistType&&checklistItems.length?(()=>{
                         </button>
                       </div>
                       <div style={{display:"flex",justifyContent:"center",paddingTop:2}}>
-                        <button onClick={()=>setChecklistItems(p=>{const n=[...p];n[index]={...n[index],nok:!ci.nok,ok:false};return n;})}
+                        <button onClick={()=>setChecklistItems(p=>{const n=[...p];const newNok=!ci.nok;n[index]={...n[index],nok:newNok,ok:false,inversores:newNok?(ci.inversores||[]):[]};return n;})}
                           style={{width:38,height:38,borderRadius:8,
                             border:`2px solid ${ci.nok?"#dc2626":C.border}`,
                             background:ci.nok?"#dc2626":"transparent",
