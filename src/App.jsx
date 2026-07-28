@@ -795,6 +795,23 @@ export default function App() {
 
   useEffect(()=>{ if(setor&&SERIES_MAP[setor]) setNumSerie(SERIES_MAP[setor]); },[setor]);
 
+  // ── Comprimir foto para salvar no banco ──────────────────────────────────
+  const compressPhoto = (b64, type) => new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 700;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      res({ b64: canvas.toDataURL('image/jpeg', 0.72).split(',')[1],
+            w: canvas.width, h: canvas.height, type: 'image/jpeg', name: 'foto.jpg' });
+    };
+    img.onerror = () => res({ b64, w:800, h:600, type: type||'image/jpeg', name:'foto.jpg' });
+    img.src = `data:${type||'image/jpeg'};base64,${b64}`;
+  });
+
   // ── Auto-save: dispara 4s após qualquer alteração ────────────────────────
   useEffect(()=>{
     const temConteudo = !!(setor||numOS||tecnico||introducao||identificacao||tratativas||causas);
@@ -821,7 +838,8 @@ export default function App() {
             : supabase.from('relatorios').insert(payload).select('id').single();
           let {data:row,error} = await q;
           if (error?.message?.includes('checklist')) {
-            const {checklist_type:_ct,checklist_items:_ci,...rest} = payload;
+            const rest = {...payload};
+            delete rest.checklist_type; delete rest.checklist_items;
             const q2 = isUpdate
               ? supabase.from('relatorios').update(rest).eq('id',currentIdRef.current)
               : supabase.from('relatorios').insert(rest).select('id').single();
@@ -836,9 +854,9 @@ export default function App() {
       setTimeout(()=>setAutoSaveMsg(""),3000);
     },4000);
     return ()=>{ clearTimeout(t); setAutoSaveMsg(""); };
-  },[setor,fabricante,numSerie,numOS,data,natureza,tecnico,tecnicoEmail,
+  },[setor,fabricante,numSerie,numOS,data,natureza,atividade,tecnico,tecnicoEmail,
      supervisor,supervisorEmail,introducao,identificacao,tratativas,causas,
-     numSlots,comentarios,fotos]); // eslint-disable-line react-hooks/exhaustive-deps
+     numSlots,comentarios,fotos,checklistType,checklistItems]);
 
   const markDone = s => setCompleted(p=>new Set([...p,s]));
 
@@ -859,137 +877,6 @@ export default function App() {
   const addFotoSlot  = (i)=>setNumFotosPerSlot(p=>{const n=[...p];n[i]=Math.min(MAX_FOTOS_POR_SLOT,(n[i]||1)+1);return n;});
   const fotoCount = fotos.filter(algumaFoto).length;
 
-
-  // ── Exportar PDF via jsPDF (script tag injection) ─────────────────────────
-  const buildReportHTML = () => {
-    const fotosAtivas = fotos.slice(0,numSlots)
-      .map((s,i)=>({s,i}))
-      .filter(({s,i})=>algumaFoto(s)||comentarios[i]);
-
-    const fotosHTML = fotosAtivas.map(({s,i})=>{
-      const imgs=FOTO_KEYS.map(k=>s[k]).filter(Boolean);
-      const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':imgs.length<=3?'foto-third':'foto-sixth';
-      return `
-      <div class="foto-bloco">
-        <div class="foto-tit">REGISTRO FOTOGRÁFICO ${String(i+1).padStart(2,'0')}</div>
-        ${imgs.length?`<div class="foto-pair">${
-          imgs.map(f=>`<img src="data:${f.type||'image/jpeg'};base64,${f.b64}" class="${cls}"/>`).join('')
-        }</div>`:''}
-        <div class="comt-box">
-          <div class="comt-lbl">Comentários:</div>
-          <div class="comt-txt">${comentarios[i]||''}</div>
-        </div>
-      </div>`;
-    }).join('');
-
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:Arial,sans-serif;font-size:11px;color:#111;background:#fff;width:794px}
-  .hdr{display:flex;align-items:center;justify-content:space-between;
-    background:#1a2744;padding:10px 14px}
-  .hdr-logo{height:34px;object-fit:contain}
-  .hdr-tit{color:#fff;font-size:14px;font-weight:700;text-align:center}
-  .hdr-qair{background:#fff;border-radius:4px;padding:3px 8px;display:flex;align-items:center}
-  .hdr-qair img{height:28px;object-fit:contain}
-  .meta{display:grid;grid-template-columns:1fr 2fr 1fr 2fr;
-    border:1px solid #bbb;overflow:hidden;margin:10px 0}
-  .ml{background:#1a2744;color:#fff;font-weight:700;font-size:10px;
-    padding:5px 9px;border:0.5px solid #2e3d5c}
-  .mv{font-size:10.5px;padding:5px 9px;border:0.5px solid #ddd}
-  .dh{background:#1a2744;color:#fff;font-weight:700;font-size:12px;padding:7px 11px}
-  .db{border:1px solid #bbb;border-top:none;padding:10px 12px;margin-bottom:10px}
-  .db h3{font-size:11.5px;font-weight:700;margin:8px 0 3px;color:#1a2744}
-  .db h3:first-child{margin-top:0}
-  .db p{font-size:11px;line-height:1.6;margin-bottom:4px}
-  .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
-  .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
-    text-align:center;padding:5px}
-  .foto-pair{display:flex;gap:4px;background:#f0f0f0;padding:6px;justify-content:center;flex-wrap:wrap}
-  .foto-single{max-width:100%;max-height:220px;object-fit:contain;display:block;margin:0 auto}
-  .foto-half{max-width:49%;max-height:220px;object-fit:contain;display:block}
-  .foto-third{max-width:32%;max-height:220px;object-fit:contain;display:block}
-  .foto-sixth{max-width:32%;max-height:220px;object-fit:contain;display:block}
-  .comt-box{border-top:1px solid #ddd;padding:5px 10px}
-  .comt-lbl{font-weight:700;font-size:10px;color:#333;margin-bottom:1px}
-  .comt-txt{font-size:10.5px;line-height:1.4}
-  .ass{display:grid;grid-template-columns:1fr 1fr;border:1px solid #bbb;margin-top:10px}
-  .ah{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
-    padding:6px 10px;border:0.5px solid #2e3d5c}
-  .ab{padding:8px 10px;min-height:50px;border:0.5px solid #ddd}
-  .an{font-weight:700;font-size:11px;margin-bottom:2px}
-  .ae{color:#1a4fd8;font-size:10px}
-</style></head><body>
-<div class="hdr">
-  <img class="hdr-logo" src="${LOGO_AIRBOX}"/>
-  <div class="hdr-tit">RELATÓRIO DE MANUTENÇÃO</div>
-  <div class="hdr-qair"><img src="${LOGO_QAIR}"/></div>
-</div>
-<div class="meta">
-  <div class="ml">Emissor:</div>     <div class="mv">${tecnico}</div>
-  <div class="ml">Data:</div>        <div class="mv">${data}</div>
-  <div class="ml">Setor:</div>       <div class="mv">${setor}</div>
-  <div class="ml">Fabricante:</div>  <div class="mv">${fabricante}</div>
-  <div class="ml">Atividade:</div>   <div class="mv">${atividade}</div>
-  <div class="ml">Nº Série:</div>    <div class="mv">${numSerie}</div>
-  <div class="ml">Natureza:</div>    <div class="mv">${natureza}</div>
-  <div class="ml">Nº OS/PT:</div>    <div class="mv">${numOS}</div>
-</div>
-<div class="dh">DESCRIÇÃO:</div>
-<div class="db">
-  ${introducao?`<h3>1. ${labelIntroducao}</h3><p>${introducao}</p>`:""}
-  ${identificacao?`<h3>2. ${labelIdentificacao}</h3><p>${identificacao}</p>`:""}
-  ${tratativas?`<h3>3. ${labelTratativas}</h3><p>${tratativas}</p>`:""}
-  ${causas?`<h3>4. ${labelCausas}</h3><p>${causas}</p>`:""}
-</div>
-${fotosHTML}
-<div class="ass">
-  <div><div class="ah">Resp. técnico:</div>
-    <div class="ab"><div class="an">${tecnico}</div>
-      <div class="ae">E-mail: ${tecnicoEmail}</div></div></div>
-  <div><div class="ah">Resp. supervisão:</div>
-    <div class="ab"><div class="an">${supervisor}</div>
-      <div class="ae">E-mail: ${supervisorEmail}</div></div></div>
-</div>
-${checklistType&&checklistItems.length?`
-<div style="page-break-before:always;margin-top:0">
-<div class="dh" style="margin-bottom:0">${CHECKLISTS[checklistType].label.toUpperCase()}</div>
-<table style="width:100%;border-collapse:collapse;border:1px solid #bbb;border-top:none;font-size:10px">
-<thead><tr style="background:#1a2744;color:#fff">
-  <th style="padding:6px 8px;font-weight:700;text-align:left;width:20%;border-right:1px solid #2e3d5c">Item</th>
-  <th style="padding:6px 8px;font-weight:700;text-align:left;width:50%">Método de Verificação</th>
-  <th style="padding:6px 8px;font-weight:700;text-align:center;width:6%">OK</th>
-  <th style="padding:6px 8px;font-weight:700;text-align:center;width:6%">NOK</th>
-  <th style="padding:6px 8px;font-weight:700;text-align:left;width:18%">Observações</th>
-</tr></thead>
-<tbody>
-${(()=>{
-  const cl=CHECKLISTS[checklistType];
-  const groups={};
-  cl.items.forEach((it,i)=>{if(!groups[it.item])groups[it.item]=[];groups[it.item].push({...it,index:i});});
-  return Object.entries(groups).map(([grp,rows])=>
-    rows.map(({metodo,index},j)=>{
-      const ci=checklistItems[index]||{ok:false,nok:false,obs:'',inversores:[]};
-      const invChips=(ci.nok&&ci.inversores&&ci.inversores.length)?`<div style="margin-top:3px"><span style="font-size:8px;color:#666;font-weight:700">Inv: </span>${[...ci.inversores].sort((a,b)=>a-b).map(n=>`<span style="display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;background:#dc2626;color:#fff;border-radius:3px;font-size:7px;font-weight:700;margin:1px">${n}</span>`).join('')}</div>`:'';
-      return `<tr style="background:${j%2===0?'#fff':'#f9fafb'}">
-        ${j===0?`<td rowspan="${rows.length}" style="padding:6px 8px;font-weight:700;font-size:10px;color:#1a2744;border-right:1px solid #ddd;border-bottom:1px solid #e0e0e0;vertical-align:middle">${grp}</td>`:''}
-        <td style="padding:6px 8px;line-height:1.45;border-bottom:1px solid #e0e0e0">${metodo}</td>
-        <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.ok?'#16a34a':'#bbb'};font-size:14px;font-weight:700">${ci.ok?'✓':'☐'}</td>
-        <td style="text-align:center;border-bottom:1px solid #e0e0e0;color:${ci.nok?'#dc2626':'#bbb'};font-size:14px;font-weight:700">${ci.nok?'✕':'☐'}</td>
-        <td style="padding:6px 8px;color:#444;border-bottom:1px solid #e0e0e0;vertical-align:top">${ci.obs||''}${invChips}</td>
-      </tr>`;
-    }).join('')
-  ).join('');
-})()}
-</tbody></table>
-<div style="border:1px solid #bbb;border-top:none;padding:6px 10px;display:flex;gap:20px;font-size:10px;background:#f0f4f8">
-  <span style="color:#16a34a;font-weight:700">✓ OK: ${checklistItems.filter(i=>i.ok).length}</span>
-  <span style="color:#dc2626;font-weight:700">✕ NOK: ${checklistItems.filter(i=>i.nok).length}</span>
-  <span style="color:#666">Pendentes: ${checklistItems.filter(i=>!i.ok&&!i.nok).length} / ${checklistItems.length}</span>
-</div>
-</div>`:''}
-</body></html>`;
-  };
 
   // helper: build report HTML string (used by both PDF paths)
   const _buildReportHTML = () => {
@@ -1125,12 +1012,18 @@ ${checklistType&&checklistItems.length?(()=>{
   };
 
   const exportPDF = () => {
-    const html = _buildReportHTML();
-    const w = window.open("", "_blank");
-    if (!w) { alert("Permita pop-ups neste site para abrir o PDF."); return; }
-    w.document.open(); w.document.write(html); w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 500);
-    setTimeout(() => { try { w.print(); } catch(e){} }, 1200);
+    try {
+      const html = _buildReportHTML();
+      const w = window.open("", "_blank");
+      if (!w) { alert("Permita pop-ups neste site para abrir o PDF."); return; }
+      w.document.open(); w.document.write(html); w.document.close();
+      w.onload = () => setTimeout(() => w.print(), 500);
+      setTimeout(() => { try { w.print(); } catch{ /* segunda chamada é best-effort */ } }, 1200);
+      setExportMsg("✅ PDF gerado em nova aba");
+    } catch(e) {
+      setExportMsg("❌ " + (e.message||"Erro ao gerar PDF"));
+    }
+    setTimeout(()=>setExportMsg(""), 4000);
   };
 
   const novoRelatorio = async () => {
@@ -1150,23 +1043,6 @@ ${checklistType&&checklistItems.length?(()=>{
   };
 
   const statsOK=[!!setor,!!numOS,!!tecnico,!!supervisor].filter(Boolean).length;
-
-  // ── Comprimir foto para salvar no banco ──────────────────────────────────
-  const compressPhoto = (b64, type) => new Promise(res => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 700;
-      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width  = Math.round(img.width  * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      res({ b64: canvas.toDataURL('image/jpeg', 0.72).split(',')[1],
-            w: canvas.width, h: canvas.height, type: 'image/jpeg', name: 'foto.jpg' });
-    };
-    img.onerror = () => res({ b64, w:800, h:600, type: type||'image/jpeg', name:'foto.jpg' });
-    img.src = `data:${type||'image/jpeg'};base64,${b64}`;
-  });
 
   // ── Salvar relatório (manual) ────────────────────────────────────────────
   const salvarRelatorio = async () => {
@@ -1190,7 +1066,8 @@ ${checklistType&&checklistItems.length?(()=>{
           : supabase.from('relatorios').insert(payload).select('id').single();
         let {data:row,error} = await q;
         if (error?.message?.includes('checklist')) {
-          const {checklist_type:_ct,checklist_items:_ci,...rest} = payload;
+          const rest = {...payload};
+          delete rest.checklist_type; delete rest.checklist_items;
           const q2 = isUpdate
             ? supabase.from('relatorios').update(rest).eq('id',currentIdRef.current)
             : supabase.from('relatorios').insert(rest).select('id').single();
