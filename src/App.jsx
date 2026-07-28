@@ -678,8 +678,12 @@ function MiniUpload({foto, onFoto, onRemove, label}) {
   );
 }
 
-// ─── FOTO CARD ─── suporta até 6 imagens em grid + comentário compartilhado
-const FOTO_LABELS=["Foto 1","Foto 2","Foto 3","Foto 4","Foto 5","Foto 6"];
+// ─── FOTO CARD ─── suporta até MAX_FOTOS_POR_SLOT imagens em grid + comentário compartilhado
+const MAX_FOTOS_POR_SLOT = 10;
+const FOTO_KEYS = Array.from({length:MAX_FOTOS_POR_SLOT},(_,i)=>'f'+(i+1));
+const FOTO_LABELS = Array.from({length:MAX_FOTOS_POR_SLOT},(_,i)=>`Foto ${i+1}`);
+const criarFotoSlotVazio = () => Object.fromEntries(FOTO_KEYS.map(k=>[k,null]));
+const algumaFoto = s => FOTO_KEYS.some(k=>s[k]);
 function FotoCard({n,fotos,numFotos,comentario,onFoto,onRemove,onComentario,onAddFoto}) {
   const temFoto = fotos.some(f=>!!f);
   const visivel = numFotos||1;
@@ -697,7 +701,7 @@ function FotoCard({n,fotos,numFotos,comentario,onFoto,onRemove,onComentario,onAd
             REGISTRO FOTOGRÁFICO {String(n).padStart(2,"0")}
           </span>
         </div>
-        <span style={{fontSize:10,color:C.dim}}>{visivel}/6 foto{visivel!==1?"s":""}</span>
+        <span style={{fontSize:10,color:C.dim}}>{visivel}/{MAX_FOTOS_POR_SLOT} foto{visivel!==1?"s":""}</span>
       </div>
       {/* Grid de fotos */}
       <div style={{display:"grid",
@@ -709,7 +713,7 @@ function FotoCard({n,fotos,numFotos,comentario,onFoto,onRemove,onComentario,onAd
         ))}
       </div>
       {/* Botão adicionar foto */}
-      {visivel<6&&(
+      {visivel<MAX_FOTOS_POR_SLOT&&(
         <div style={{padding:"0 4px 4px",background:C.surface}}>
           <button onClick={onAddFoto}
             style={{width:"100%",padding:"6px 10px",background:"none",
@@ -772,7 +776,7 @@ export default function App() {
   const [labelTratativas,setLabelTratativas]       = useState("Tratativas");
   const [labelCausas,setLabelCausas]               = useState("Possível Causa");
 
-  const [fotos,setFotos]           = useState(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));
+  const [fotos,setFotos]           = useState(Array(50).fill(null).map(criarFotoSlotVazio));
   const [comentarios,setComentarios] = useState(Array(50).fill(""));
   const [numSlots,setNumSlots]     = useState(4);
   const [numFotosPerSlot,setNumFotosPerSlot] = useState(Array(50).fill(1));
@@ -801,7 +805,7 @@ export default function App() {
       try {
         const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>{
           const o={};
-          for(let k=1;k<=6;k++){const fk='f'+k; o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null;}
+          for(const fk of FOTO_KEYS){ o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null; }
           return o;
         }));
         const p = {setor,fabricante,num_serie:numSerie,num_os:numOS,
@@ -852,18 +856,18 @@ export default function App() {
   const setFotoAt    = (i,k,v)=>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
   const removeFotoAt = (i,k)  =>setFotos(p=>{const n=[...p];n[i]={...n[i],[k]:null};return n;});
   const setComt      = (i,v)=>setComentarios(p=>{const n=[...p];n[i]=v;return n;});
-  const addFotoSlot  = (i)=>setNumFotosPerSlot(p=>{const n=[...p];n[i]=Math.min(6,(n[i]||1)+1);return n;});
-  const fotoCount = fotos.filter(s=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6).length;
+  const addFotoSlot  = (i)=>setNumFotosPerSlot(p=>{const n=[...p];n[i]=Math.min(MAX_FOTOS_POR_SLOT,(n[i]||1)+1);return n;});
+  const fotoCount = fotos.filter(algumaFoto).length;
 
 
   // ── Exportar PDF via jsPDF (script tag injection) ─────────────────────────
   const buildReportHTML = () => {
     const fotosAtivas = fotos.slice(0,numSlots)
       .map((s,i)=>({s,i}))
-      .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
+      .filter(({s,i})=>algumaFoto(s)||comentarios[i]);
 
     const fotosHTML = fotosAtivas.map(({s,i})=>{
-      const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
+      const imgs=FOTO_KEYS.map(k=>s[k]).filter(Boolean);
       const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':imgs.length<=3?'foto-third':'foto-sixth';
       return `
       <div class="foto-bloco">
@@ -991,9 +995,9 @@ ${(()=>{
   const _buildReportHTML = () => {
     const fotosAtivas = fotos.slice(0,numSlots)
       .map((s,i)=>({s,i}))
-      .filter(({s,i})=>s.f1||s.f2||s.f3||s.f4||s.f5||s.f6||comentarios[i]);
+      .filter(({s,i})=>algumaFoto(s)||comentarios[i]);
     const fotosHTML = fotosAtivas.map(({s,i})=>{
-      const imgs=[s.f1,s.f2,s.f3,s.f4,s.f5,s.f6].filter(Boolean);
+      const imgs=FOTO_KEYS.map(k=>s[k]).filter(Boolean);
       const cls=imgs.length===1?'foto-single':imgs.length===2?'foto-half':imgs.length<=3?'foto-third':'foto-sixth';
       return `
       <div class="foto-bloco">
@@ -1140,7 +1144,7 @@ ${checklistType&&checklistItems.length?(()=>{
     setIntroducao("");setIdentificacao("");setTratativas("");setCausas("");
     setLabelIntroducao("Introdução");setLabelIdentificacao("Identificação do Problema");
     setLabelTratativas("Tratativas");setLabelCausas("Possível Causa");
-    setFotos(Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null})));setComentarios(Array(50).fill(""));
+    setFotos(Array(50).fill(null).map(criarFotoSlotVazio));setComentarios(Array(50).fill(""));
     setNumFotosPerSlot(Array(50).fill(1));
     setNumSlots(4);setCompleted(new Set());setChecklistType(null);setChecklistItems([]);setStep("info");
   };
@@ -1170,7 +1174,7 @@ ${checklistType&&checklistItems.length?(()=>{
     try {
       const fotosC = await Promise.all(fotos.slice(0,numSlots).map(async s=>{
         const o={};
-        for(let k=1;k<=6;k++){const fk='f'+k; o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null;}
+        for(const fk of FOTO_KEYS){ o[fk]=s[fk]?await compressPhoto(s[fk].b64,s[fk].type):null; }
         return o;
       }));
       const p = {setor,fabricante,num_serie:numSerie,num_os:numOS,
@@ -1232,11 +1236,11 @@ ${checklistType&&checklistItems.length?(()=>{
     const c50 = Array(50).fill("");
     if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c50[i]=v; });
     setComentarios(c50);
-    const f50 = Array(50).fill(null).map(()=>({f1:null,f2:null,f3:null,f4:null,f5:null,f6:null}));
+    const f50 = Array(50).fill(null).map(criarFotoSlotVazio);
     const nfps = Array(50).fill(1);
     if (row.fotos?.length) row.fotos.forEach((v,i)=>{
-      if(v){ f50[i]={f1:null,f2:null,f3:null,f4:null,f5:null,f6:null,...v};
-        nfps[i]=Math.max(1,['f1','f2','f3','f4','f5','f6'].filter(k=>v[k]).length); }
+      if(v){ f50[i]={...criarFotoSlotVazio(),...v};
+        nfps[i]=Math.max(1,FOTO_KEYS.filter(k=>v[k]).length); }
     });
     setFotos(f50); setNumFotosPerSlot(nfps);
     currentIdRef.current = row.id;
@@ -1420,7 +1424,7 @@ ${checklistType&&checklistItems.length?(()=>{
       <div style={{display:"flex",flexDirection:"column",gap:14}}>
         {Array.from({length:numSlots}).map((_,i)=>(
           <FotoCard key={i} n={i+1}
-            fotos={[fotos[i].f1,fotos[i].f2,fotos[i].f3,fotos[i].f4,fotos[i].f5,fotos[i].f6]}
+            fotos={FOTO_KEYS.map(k=>fotos[i][k])}
             numFotos={numFotosPerSlot[i]||1}
             comentario={comentarios[i]}
             onFoto={(fi,v)=>{setFotoAt(i,'f'+(fi+1),v);markDone("fotos");}}
