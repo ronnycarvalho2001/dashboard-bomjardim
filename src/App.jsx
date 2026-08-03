@@ -16,7 +16,7 @@ const TECNICOS = [
 const SUPERVISORES = [
   { nome:"Marcos Paulo Rabelo", email:"m.rabelo@airbox.pro" },
 ];
-const FABRICANTES = ["INGETEAM","SMA","ABB","Fronius","Huawei","Sungrow","Array","STI","WEG","Railec","Jinko"];
+const FABRICANTES = ["INGETEAM","SMA","ABB","Fronius","Huawei","Sungrow","Array","STI","WEG","Railec","Jinko","RoMiotto"];
 const GRUPOS = [
   { nome:"BJA1-STS1", serial:"XB255573", inv:[
     ["INV1","ES2510069813"],["INV2","ES2510069737"],["INV3","ES2510069754"],["INV4","ES2510069736"],
@@ -234,12 +234,13 @@ const GRUPOS = [
     ["INV29","ES2510070861"],["INV30","ES2510069258"],
   ]},
 ];
+// Estações que possuem TMS (Transformador de Média Tensão) — atalho no seletor de Setor/Equipamento
+const TMS_NOMES = ["BJA1-STS6","BJA2-STS3","BJA3-STS2","BJA5-STS2"];
 const SERIES_MAP = Object.fromEntries([
   ...GRUPOS.map(g=>[g.nome,g.serial]),
   ...GRUPOS.flatMap(g=>g.inv.map(([n,s])=>[`${g.nome} · ${n}`,s])),
+  ...TMS_NOMES.map(n=>{ const g=GRUPOS.find(x=>x.nome===n); return [`TMS: ${n}`, g?g.serial:""]; }),
 ]);
-// Estações que possuem TMS (Transformador de Média Tensão) — atalho no seletor de Setor/Equipamento
-const TMS_NOMES = ["BJA1-STS6","BJA2-STS3","BJA3-STS2","BJA5-STS2"];
 
 // ─── CORES ──────────────────────────────────────────────────────────────────
 const C = {
@@ -569,12 +570,12 @@ function SetorSelector({ value, onChange }) {
                 <span style={{fontSize:10, color:C.muted, fontFamily:"monospace"}}>{g.serial}</span>
               </div>
               {isExp(g.nome) && g.inv.map(([nome,serial]) => (
-                <div key={nome} onMouseDown={() => pick(g.isTMS ? nome : `${g.nome} · ${nome}`)}
+                <div key={nome} onMouseDown={() => pick(g.isTMS ? `TMS: ${nome}` : `${g.nome} · ${nome}`)}
                   style={{...row, paddingLeft:32, justifyContent:"space-between"}}
                   onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <span style={{fontSize:12, color:C.text}}>{nome}</span>
-                  <span style={{fontSize:11, color:C.muted, fontFamily:"monospace"}}>{serial}</span>
+                  {!g.isTMS && <span style={{fontSize:11, color:C.muted, fontFamily:"monospace"}}>{serial}</span>}
                 </div>
               ))}
             </div>
@@ -1421,7 +1422,7 @@ ${checklistType&&checklistItems.length?(()=>{
     const okCount=checklistItems.filter(i=>i.ok).length;
     const nokCount=checklistItems.filter(i=>i.nok).length;
     const pendCount=checklistItems.filter(i=>!i.ok&&!i.nok).length;
-    const grupoNome=setor.split(' · ')[0].trim();
+    const grupoNome=setor.replace(/^TMS:\s*/,'').split(' · ')[0].trim();
     const grupoSTS=GRUPOS.find(g=>g.nome===grupoNome);
     const inversoresDaSTS=checklistType==='inversor_semestral'&&grupoSTS?grupoSTS.inv:[];
     return (
