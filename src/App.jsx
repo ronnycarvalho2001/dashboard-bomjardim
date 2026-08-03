@@ -238,6 +238,8 @@ const SERIES_MAP = Object.fromEntries([
   ...GRUPOS.map(g=>[g.nome,g.serial]),
   ...GRUPOS.flatMap(g=>g.inv.map(([n,s])=>[`${g.nome} · ${n}`,s])),
 ]);
+// Estações que possuem TMS (Transformador de Média Tensão) — atalho no seletor de Setor/Equipamento
+const TMS_NOMES = ["BJA1-STS6","BJA2-STS3","BJA3-STS2","BJA5-STS2"];
 
 // ─── CORES ──────────────────────────────────────────────────────────────────
 const C = {
@@ -508,7 +510,10 @@ function SetorSelector({ value, onChange }) {
   const q = value.toLowerCase();
   const isF = q.length > 0;
 
-  const grupos = GRUPOS.map(g => {
+  const tmsGrupo = { nome:"TMS", serial:"", isTMS:true,
+    inv: TMS_NOMES.map(n => { const g = GRUPOS.find(x => x.nome === n); return [n, g ? g.serial : ""]; }) };
+
+  const grupos = [tmsGrupo, ...GRUPOS].map(g => {
     const gMatch = g.nome.toLowerCase().includes(q) || g.serial.toLowerCase().includes(q);
     const inv = isF
       ? g.inv.filter(([n,s]) => gMatch || n.toLowerCase().includes(q) || s.toLowerCase().includes(q))
@@ -538,7 +543,7 @@ function SetorSelector({ value, onChange }) {
         onChange={e => { onChange(e.target.value); setOpen(true); }}
         onFocus={e => { e.target.style.borderColor = C.accent; setOpen(true); }}
         onBlur={e => e.target.style.borderColor = C.border}
-        placeholder="Selecione grupo ou inversor..."
+        placeholder="Selecione grupo, TMS ou equipamento..."
         autoComplete="off"
         style={{background:C.surface, border:`1px solid ${C.border}`, borderRadius:8,
           color:C.text, padding:"10px 14px", fontSize:13, fontFamily:"inherit",
@@ -564,7 +569,7 @@ function SetorSelector({ value, onChange }) {
                 <span style={{fontSize:10, color:C.muted, fontFamily:"monospace"}}>{g.serial}</span>
               </div>
               {isExp(g.nome) && g.inv.map(([nome,serial]) => (
-                <div key={nome} onMouseDown={() => pick(`${g.nome} · ${nome}`)}
+                <div key={nome} onMouseDown={() => pick(g.isTMS ? nome : `${g.nome} · ${nome}`)}
                   style={{...row, paddingLeft:32, justifyContent:"space-between"}}
                   onMouseEnter={e => e.currentTarget.style.background = C.navyLight}
                   onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
@@ -580,16 +585,85 @@ function SetorSelector({ value, onChange }) {
   );
 }
 
-function TArea({value,onChange,placeholder,rows=4}) {
+// ─── FORMATAÇÃO DE TEXTO (descrição técnica) ───────────────────────────────
+// Sintaxe leve: linha em branco = novo parágrafo, "- " no início da linha = tópico,
+// **texto** = negrito. Convertida para HTML só na hora de montar o relatório.
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function boldifyHtml(s) {
+  return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+}
+function mdLiteToHtml(text) {
+  if (!text) return '';
+  const blocks = escapeHtml(text).replace(/\r\n/g,'\n').split(/\n\s*\n/);
+  return blocks.map(block => {
+    const lines = block.split('\n').map(l=>l.trim()).filter(l=>l.length);
+    if (!lines.length) return '';
+    const isList = lines.every(l => /^[-•]\s+/.test(l));
+    if (isList) {
+      return `<ul>${lines.map(l=>`<li>${boldifyHtml(l.replace(/^[-•]\s+/,''))}</li>`).join('')}</ul>`;
+    }
+    return `<p>${lines.map(boldifyHtml).join('<br>')}</p>`;
+  }).join('');
+}
+
+function TAreaRica({value,onChange,placeholder,rows=5}) {
+  const ref = useRef(null);
+
+  const wrapSelection = mark => {
+    const el = ref.current;
+    if (!el) return;
+    const s = el.selectionStart, e = el.selectionEnd;
+    const sel = value.slice(s,e) || "texto";
+    const next = value.slice(0,s) + mark + sel + mark + value.slice(e);
+    onChange(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      el.setSelectionRange(s+mark.length, s+mark.length+sel.length);
+    });
+  };
+
+  const toggleTopicos = () => {
+    const el = ref.current;
+    if (!el) return;
+    const s = el.selectionStart, e = el.selectionEnd;
+    let lineStart = value.lastIndexOf('\n', s-1) + 1;
+    let lineEnd = value.indexOf('\n', e);
+    if (lineEnd === -1) lineEnd = value.length;
+    const lines = value.slice(lineStart, lineEnd).split('\n');
+    const allBulleted = lines.every(l => l.trim()==='' || /^[-•]\s+/.test(l));
+    const newLines = lines.map(l => {
+      if (l.trim()==='') return l;
+      return allBulleted ? l.replace(/^[-•]\s+/,'') : `- ${l}`;
+    });
+    onChange(value.slice(0,lineStart) + newLines.join('\n') + value.slice(lineEnd));
+    requestAnimationFrame(() => el.focus());
+  };
+
+  const btn = {border:`1px solid ${C.border}`, background:C.surface, color:C.text,
+    borderRadius:6, padding:"4px 10px", fontSize:12, cursor:"pointer"};
+
   return (
-    <textarea value={value} onChange={e=>onChange(e.target.value)}
-      placeholder={placeholder} rows={rows}
-      style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,
-        color:C.text,padding:"10px 14px",fontSize:13,fontFamily:"inherit",
-        outline:"none",width:"100%",resize:"vertical",boxSizing:"border-box",lineHeight:1.6}}
-      onFocus={e=>e.target.style.borderColor=C.accent}
-      onBlur={e=>e.target.style.borderColor=C.border}
-    />
+    <div>
+      <div style={{display:"flex", gap:6, marginBottom:6}}>
+        <button type="button" title="Negrito (**texto**)" onClick={()=>wrapSelection("**")}
+          style={{...btn, fontWeight:700}}>N</button>
+        <button type="button" title="Tópico / lista" onClick={toggleTopicos}
+          style={btn}>• Tópico</button>
+      </div>
+      <textarea ref={ref} value={value} onChange={e=>onChange(e.target.value)}
+        placeholder={placeholder} rows={rows}
+        style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,
+          color:C.text,padding:"10px 14px",fontSize:13,fontFamily:"inherit",
+          outline:"none",width:"100%",resize:"vertical",boxSizing:"border-box",lineHeight:1.8}}
+        onFocus={e=>e.target.style.borderColor=C.accent}
+        onBlur={e=>e.target.style.borderColor=C.border}
+      />
+      <div style={{fontSize:11,color:C.muted,marginTop:4}}>
+        Use <b>**texto**</b> para negrito, linhas iniciadas com "- " para tópicos, e uma linha em branco para começar um novo parágrafo.
+      </div>
+    </div>
   );
 }
 
@@ -919,7 +993,10 @@ export default function App() {
   .db{border:1px solid #bbb;border-top:none;padding:10px 12px;margin-bottom:10px}
   .db h3{font-size:11.5px;font-weight:700;margin:8px 0 3px;color:#1a2744}
   .db h3:first-child{margin-top:0}
-  .db p{font-size:11px;line-height:1.6;margin-bottom:4px}
+  .db p{font-size:11px;line-height:1.8;margin-bottom:8px}
+  .db ul{font-size:11px;line-height:1.8;margin:0 0 8px 0;padding-left:20px}
+  .db li{margin-bottom:2px;padding-left:2px}
+  .db strong{font-weight:700}
   .foto-bloco{margin-bottom:8px;border:1px solid #ccc;overflow:hidden;page-break-inside:avoid;break-inside:avoid}
   .foto-tit{background:#1a2744;color:#fff;font-weight:700;font-size:11px;
     text-align:center;padding:5px}
@@ -956,10 +1033,10 @@ export default function App() {
 </div>
 <div class="dh">DESCRI\u00c7\u00c3O:</div>
 <div class="db">
-  ${introducao?`<h3>1. ${labelIntroducao}</h3><p>${introducao}</p>`:''}
-  ${identificacao?`<h3>2. ${labelIdentificacao}</h3><p>${identificacao}</p>`:''}
-  ${tratativas?`<h3>3. ${labelTratativas}</h3><p>${tratativas}</p>`:''}
-  ${causas?`<h3>4. ${labelCausas}</h3><p>${causas}</p>`:''}
+  ${introducao?`<h3>1. ${labelIntroducao}</h3>${mdLiteToHtml(introducao)}`:''}
+  ${identificacao?`<h3>2. ${labelIdentificacao}</h3>${mdLiteToHtml(identificacao)}`:''}
+  ${tratativas?`<h3>3. ${labelTratativas}</h3>${mdLiteToHtml(tratativas)}`:''}
+  ${causas?`<h3>4. ${labelCausas}</h3>${mdLiteToHtml(causas)}`:''}
 </div>
 ${fotosHTML}
 <div class="ass">
@@ -1148,7 +1225,7 @@ ${checklistType&&checklistItems.length?(()=>{
         <div style={{fontSize:12,color:C.muted,marginTop:2}}>Dados de referência do equipamento e OS</div>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-        <Field label="Setor / Inversor" required>
+        <Field label="Setor / Equipamento" required>
           <SetorSelector value={setor} onChange={setSetor}/>
         </Field>
         <Field label="Data" required>
@@ -1265,7 +1342,7 @@ ${checklistType&&checklistItems.length?(()=>{
                   outline:"none",flex:1,padding:"1px 0"}}
               />
             </div>
-            <TArea value={val} onChange={v=>{set(v);markDone("desc");}} placeholder={ph} rows={3}/>
+            <TAreaRica value={val} onChange={v=>{set(v);markDone("desc");}} placeholder={ph} rows={5}/>
           </div>
         ))}
         <div style={{display:"flex",justifyContent:"space-between"}}>
