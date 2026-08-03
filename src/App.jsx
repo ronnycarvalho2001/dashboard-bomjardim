@@ -585,83 +585,98 @@ function SetorSelector({ value, onChange }) {
   );
 }
 
-// ─── FORMATAÇÃO DE TEXTO (descrição técnica) ───────────────────────────────
-// Sintaxe leve: linha em branco = novo parágrafo, "- " no início da linha = tópico,
-// **texto** = negrito. Convertida para HTML só na hora de montar o relatório.
-function escapeHtml(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function boldifyHtml(s) {
-  return s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
-}
-function mdLiteToHtml(text) {
-  if (!text) return '';
-  const blocks = escapeHtml(text).replace(/\r\n/g,'\n').split(/\n\s*\n/);
-  return blocks.map(block => {
-    const lines = block.split('\n').map(l=>l.trim()).filter(l=>l.length);
-    if (!lines.length) return '';
-    const isList = lines.every(l => /^[-•]\s+/.test(l));
-    if (isList) {
-      return `<ul>${lines.map(l=>`<li>${boldifyHtml(l.replace(/^[-•]\s+/,''))}</li>`).join('')}</ul>`;
-    }
-    return `<p>${lines.map(boldifyHtml).join('<br>')}</p>`;
-  }).join('');
-}
+// ─── EDITOR RICO (descrição técnica) ───────────────────────────────────────
+// contentEditable de verdade: o que você vê no editor (negrito, tópicos,
+// parágrafos) é exatamente o que sai no relatório/PDF.
+const RT_ALLOWED_TAGS = new Set(['B','STRONG','I','EM','U','UL','OL','LI','BR','P','DIV','SPAN']);
 
-function TAreaRica({value,onChange,placeholder,rows=5}) {
-  const ref = useRef(null);
-
-  const wrapSelection = mark => {
-    const el = ref.current;
-    if (!el) return;
-    const s = el.selectionStart, e = el.selectionEnd;
-    const sel = value.slice(s,e) || "texto";
-    const next = value.slice(0,s) + mark + sel + mark + value.slice(e);
-    onChange(next);
-    requestAnimationFrame(() => {
-      el.focus();
-      el.setSelectionRange(s+mark.length, s+mark.length+sel.length);
+function sanitizeRichHtml(html) {
+  if (!html) return '';
+  const doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  const root = doc.body.firstChild;
+  const clean = node => {
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType === 1) {
+        if (child.tagName === 'SCRIPT' || child.tagName === 'STYLE') { child.remove(); return; }
+        if (!RT_ALLOWED_TAGS.has(child.tagName)) {
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          return;
+        }
+        [...child.attributes].forEach(a => child.removeAttribute(a.name));
+        clean(child);
+      } else if (child.nodeType !== 3) {
+        child.remove();
+      }
     });
   };
+  clean(root);
+  return root.innerHTML;
+}
 
-  const toggleTopicos = () => {
+function richTextIsEmpty(html) {
+  return !html || html.replace(/<[^>]+>/g,'').replace(/&nbsp;/g,'').trim() === '';
+}
+
+// Migra descrições antigas (texto puro salvo antes do editor rico) para HTML com parágrafos.
+function legacyTextToHtml(text) {
+  if (!text) return '';
+  if (/<[a-z][\s\S]*>/i.test(text)) return text;
+  const esc = String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return esc.replace(/\r\n/g,'\n').split(/\n\s*\n/).map(b=>`<p>${b.split('\n').join('<br>')}</p>`).join('');
+}
+
+function RichTextArea({value,onChange,placeholder,minHeight=110}) {
+  const ref = useRef(null);
+
+  useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    const s = el.selectionStart, e = el.selectionEnd;
-    let lineStart = value.lastIndexOf('\n', s-1) + 1;
-    let lineEnd = value.indexOf('\n', e);
-    if (lineEnd === -1) lineEnd = value.length;
-    const lines = value.slice(lineStart, lineEnd).split('\n');
-    const allBulleted = lines.every(l => l.trim()==='' || /^[-•]\s+/.test(l));
-    const newLines = lines.map(l => {
-      if (l.trim()==='') return l;
-      return allBulleted ? l.replace(/^[-•]\s+/,'') : `- ${l}`;
-    });
-    onChange(value.slice(0,lineStart) + newLines.join('\n') + value.slice(lineEnd));
-    requestAnimationFrame(() => el.focus());
+    if (el && el.innerHTML !== (value||'')) el.innerHTML = value || '';
+  }, [value]);
+
+  const exec = (cmd, arg=null) => {
+    const el = ref.current;
+    el.focus();
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch { /* unsupported */ }
+    document.execCommand(cmd, false, arg);
+    onChange(sanitizeRichHtml(el.innerHTML));
+  };
+
+  const handleInput = () => {
+    try { document.execCommand('defaultParagraphSeparator', false, 'p'); } catch { /* unsupported */ }
+    onChange(sanitizeRichHtml(ref.current.innerHTML));
   };
 
   const btn = {border:`1px solid ${C.border}`, background:C.surface, color:C.text,
     borderRadius:6, padding:"4px 10px", fontSize:12, cursor:"pointer"};
 
+  const empty = richTextIsEmpty(value);
+
   return (
     <div>
       <div style={{display:"flex", gap:6, marginBottom:6}}>
-        <button type="button" title="Negrito (**texto**)" onClick={()=>wrapSelection("**")}
-          style={{...btn, fontWeight:700}}>N</button>
-        <button type="button" title="Tópico / lista" onClick={toggleTopicos}
-          style={btn}>• Tópico</button>
+        <button type="button" title="Negrito" onMouseDown={e=>e.preventDefault()}
+          onClick={()=>exec('bold')} style={{...btn, fontWeight:700}}>N</button>
+        <button type="button" title="Tópico / lista" onMouseDown={e=>e.preventDefault()}
+          onClick={()=>exec('insertUnorderedList')} style={btn}>• Tópico</button>
       </div>
-      <textarea ref={ref} value={value} onChange={e=>onChange(e.target.value)}
-        placeholder={placeholder} rows={rows}
-        style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,
-          color:C.text,padding:"10px 14px",fontSize:13,fontFamily:"inherit",
-          outline:"none",width:"100%",resize:"vertical",boxSizing:"border-box",lineHeight:1.8}}
-        onFocus={e=>e.target.style.borderColor=C.accent}
-        onBlur={e=>e.target.style.borderColor=C.border}
-      />
+      <div style={{position:"relative"}}>
+        {empty && (
+          <div style={{position:"absolute", top:10, left:14, fontSize:13, color:C.muted, pointerEvents:"none"}}>
+            {placeholder}
+          </div>
+        )}
+        <div ref={ref} contentEditable suppressContentEditableWarning
+          onInput={handleInput}
+          style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:8,
+            color:C.text,padding:"10px 14px",fontSize:13,fontFamily:"inherit",
+            outline:"none",width:"100%",minHeight,boxSizing:"border-box",lineHeight:1.8}}
+          onFocus={e=>e.currentTarget.style.borderColor=C.accent}
+          onBlur={e=>e.currentTarget.style.borderColor=C.border}
+        />
+      </div>
       <div style={{fontSize:11,color:C.muted,marginTop:4}}>
-        Use <b>**texto**</b> para negrito, linhas iniciadas com "- " para tópicos, e uma linha em branco para começar um novo parágrafo.
+        Selecione o texto e use <b>N</b> para negrito e <b>• Tópico</b> para criar uma lista. Enter pula parágrafo, Shift+Enter quebra a linha.
       </div>
     </div>
   );
@@ -888,7 +903,8 @@ export default function App() {
 
   // ── Auto-save: dispara 4s após qualquer alteração ────────────────────────
   useEffect(()=>{
-    const temConteudo = !!(setor||numOS||tecnico||introducao||identificacao||tratativas||causas);
+    const temConteudo = !!(setor||numOS||tecnico) || !richTextIsEmpty(introducao) ||
+      !richTextIsEmpty(identificacao) || !richTextIsEmpty(tratativas) || !richTextIsEmpty(causas);
     if (!temConteudo) return;
     setAutoSaveMsg("•••");
     const t = setTimeout(async ()=>{
@@ -994,6 +1010,7 @@ export default function App() {
   .db h3{font-size:11.5px;font-weight:700;margin:8px 0 3px;color:#1a2744}
   .db h3:first-child{margin-top:0}
   .db p{font-size:11px;line-height:1.8;margin-bottom:8px}
+  .db .rt>div{font-size:11px;line-height:1.8;margin-bottom:8px}
   .db ul{font-size:11px;line-height:1.8;margin:0 0 8px 0;padding-left:20px}
   .db li{margin-bottom:2px;padding-left:2px}
   .db strong{font-weight:700}
@@ -1033,10 +1050,10 @@ export default function App() {
 </div>
 <div class="dh">DESCRI\u00c7\u00c3O:</div>
 <div class="db">
-  ${introducao?`<h3>1. ${labelIntroducao}</h3>${mdLiteToHtml(introducao)}`:''}
-  ${identificacao?`<h3>2. ${labelIdentificacao}</h3>${mdLiteToHtml(identificacao)}`:''}
-  ${tratativas?`<h3>3. ${labelTratativas}</h3>${mdLiteToHtml(tratativas)}`:''}
-  ${causas?`<h3>4. ${labelCausas}</h3>${mdLiteToHtml(causas)}`:''}
+  ${!richTextIsEmpty(introducao)?`<h3>1. ${labelIntroducao}</h3><div class="rt">${introducao}</div>`:''}
+  ${!richTextIsEmpty(identificacao)?`<h3>2. ${labelIdentificacao}</h3><div class="rt">${identificacao}</div>`:''}
+  ${!richTextIsEmpty(tratativas)?`<h3>3. ${labelTratativas}</h3><div class="rt">${tratativas}</div>`:''}
+  ${!richTextIsEmpty(causas)?`<h3>4. ${labelCausas}</h3><div class="rt">${causas}</div>`:''}
 </div>
 ${fotosHTML}
 <div class="ass">
@@ -1184,8 +1201,8 @@ ${checklistType&&checklistItems.length?(()=>{
     setAtividade(row.atividade||"");
     setTecnico(row.tecnico||""); setTecnicoEmail(row.tecnico_email||"");
     setSupervisor(row.supervisor||""); setSupervisorEmail(row.supervisor_email||"");
-    setIntroducao(row.introducao||""); setIdentificacao(row.identificacao||"");
-    setTratativas(row.tratativas||""); setCausas(row.causas||"");
+    setIntroducao(legacyTextToHtml(row.introducao||"")); setIdentificacao(legacyTextToHtml(row.identificacao||""));
+    setTratativas(legacyTextToHtml(row.tratativas||"")); setCausas(legacyTextToHtml(row.causas||""));
     setNumSlots(row.num_slots||4);
     const c50 = Array(50).fill("");
     if (row.comentarios?.length) row.comentarios.forEach((v,i)=>{ c50[i]=v; });
@@ -1342,7 +1359,7 @@ ${checklistType&&checklistItems.length?(()=>{
                   outline:"none",flex:1,padding:"1px 0"}}
               />
             </div>
-            <TAreaRica value={val} onChange={v=>{set(v);markDone("desc");}} placeholder={ph} rows={5}/>
+            <RichTextArea value={val} onChange={v=>{set(v);markDone("desc");}} placeholder={ph}/>
           </div>
         ))}
         <div style={{display:"flex",justifyContent:"space-between"}}>
